@@ -1,7 +1,5 @@
-import abstracts.Clock;
 import static constants.RequestCode.*;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -23,7 +21,7 @@ public class ReqeusetProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         byte requestCode = getRequestCode(msg);
         switch (requestCode) {
             case GET_CLOCK_REQ:
-                ByteBuf buf = ResponseGenerator.generateClockResponse();
+                ByteBuf buf = MessageGenerator.generateClockResponse();
                 ctx.channel().writeAndFlush(buf);
                 ReferenceCountUtil.release(buf);
                 break;

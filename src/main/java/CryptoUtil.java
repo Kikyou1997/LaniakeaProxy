@@ -1,3 +1,4 @@
+import interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import lombok.extern.slf4j.Slf4j;
 
@@ -6,8 +7,12 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 /**
  * @author kikyou
@@ -17,6 +22,8 @@ public class CryptoUtil {
 
     private static final String ALG = "AES";
     private static final String CIPHER = "AES/CFB/PKCS5Padding";
+    private static Base64.Encoder base64Encoder = Base64.getEncoder();
+    private static Base64.Decoder base64Decoder = Base64.getDecoder();
 
     public static Key toKey(byte[] key) {
         return new SecretKeySpec(key, ALG);
@@ -31,6 +38,23 @@ public class CryptoUtil {
         } catch (Exception e) {
             throw new Error("Cipher init failed");
         }
+    }
+
+
+    public  static byte[] getSHA256Hash(byte[] secretKey, byte[] salt) {
+        MessageDigest digest = null;
+
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        digest.update(secretKey);
+        return digest.digest(salt);
+    }
+
+    public  static byte[] getSHA256Hash(String secretKey, byte[] salt) {
+        return getSHA256Hash(base64Decoder.decode(secretKey), salt);
     }
 
     public static byte[] decrypt(byte[] data, byte[] key, IvParameterSpec ivParameterSpec) throws Exception {
@@ -109,6 +133,14 @@ public class CryptoUtil {
 
     public static Object decrypt(Object data, byte[] id) throws Exception {
         return decrypt(data, id);
+    }
+
+    public static byte[] decodeFromString(String encoded) {
+        return base64Decoder.decode(encoded);
+    }
+
+    public static String encodeFromBytes(byte[] bytes) {
+        return base64Encoder.encodeToString(bytes);
     }
 
 

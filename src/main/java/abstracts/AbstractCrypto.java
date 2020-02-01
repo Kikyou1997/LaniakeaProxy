@@ -13,20 +13,7 @@ import java.security.NoSuchAlgorithmException;
  */
 public abstract class AbstractCrypto implements Crypto {
 
-    private static MessageDigest digest = null;
 
-    static {
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static byte[] getSHA256Hash(String password, byte[] salt) {
-        digest.update(password.getBytes(StandardCharsets.UTF_8));
-        return digest.digest(salt);
-    }
 
     public abstract byte[] encrypt(ByteBuf raw);
 

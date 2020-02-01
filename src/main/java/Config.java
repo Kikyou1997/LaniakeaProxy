@@ -15,7 +15,7 @@ public class Config implements Serializable {
 
     public static transient String CLIENT_CONFIG_FILE_PATH = "/etc/andromeda/config.json";
     public static transient String SERVER_CONFIG_FILE_PATH = "/etc/andromeda/server_config.json";
-    private transient HashMap<String/*用户名*/, User/*用户信息*/> userInfoMap = new HashMap<>();
+    private static transient HashMap<String/*用户名*/, User/*用户信息*/> userInfoMap = new HashMap<>();
 
     private Integer bindPort;
     private String serverAddress;
@@ -36,4 +36,13 @@ public class Config implements Serializable {
         private Long usedTraffics;
     }
 
+    public void initUserInfoMap() {
+        for (User u : users) {
+            userInfoMap.put(u.username, u);
+        }
+    }
+
+    public static User getUserInfo(String username) {
+        return userInfoMap.get(username);
+    }
 }
