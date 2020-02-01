@@ -43,7 +43,7 @@ public class Converter {
         return ans;
     }
 
-    public static byte[] convertInteger2ByteLittleBigEnding(int val) {
+    public static byte[] convertInteger2ByteBigEnding(int val) {
         byte[] ans = new byte[8];
         int count = 24;
         byte helper = -1;

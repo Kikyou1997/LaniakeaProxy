@@ -40,7 +40,7 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
                 int id = ids.getAndIncrement();
                 idTimeMap.put(id, System.currentTimeMillis());
                 idNameMap.put(id, name);
-                context.writeAndFlush(createAuthResponse())
+                context.writeAndFlush(createAuthResponse(id));
             } else {
                 context.channel().close();
             }
@@ -49,6 +49,6 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
     }
 
     private ByteBuf createAuthResponse(int id) {
-        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteLittleBigEnding(id), CryptoUtil.ivGenerator());
+        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), CryptoUtil.ivGenerator());
     }
 }
