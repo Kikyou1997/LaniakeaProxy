@@ -8,4 +8,5 @@ public interface ResponseCode {
 
     byte CLOCK_RESP = (byte)0Xff;
     byte INIT_CONN_RESP = (byte)0xfe;
+    byte DATA_TRANS_RESP = (byte)0xfd;
 }

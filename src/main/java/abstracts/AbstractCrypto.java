@@ -17,15 +17,15 @@ public abstract class AbstractCrypto implements Crypto {
 
     static {
         try {
-            digest = MessageDigest.getInstance("MD5");
+            digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }
 
-    public static byte[] getMD5Hash(String password) {
+    public static byte[] getSHA256Hash(String password, byte[] salt) {
         digest.update(password.getBytes(StandardCharsets.UTF_8));
-        return digest.digest();
+        return digest.digest(salt);
     }
 
     public abstract byte[] encrypt(ByteBuf raw);

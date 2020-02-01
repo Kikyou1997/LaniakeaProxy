@@ -9,5 +9,5 @@ public interface RequestCode {
     byte GET_CLOCK_REQ = 0X1;
     byte AUTH_REQ= 0X2;
     byte INIT_CONN_REQ = 0X3;
-
+    byte DATA_TRANS_REQ = 0x4;
 }
