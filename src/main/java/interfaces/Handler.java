@@ -4,8 +4,8 @@ package interfaces;
  * @author kikyou
  * Created at 2020/1/30
  */
-public interface Handler {
+public interface Handler<R> {
 
-    void handle(Object msg) throws Exception;
+    R handle(Object msg) throws Exception;
 
 }

@@ -112,9 +112,9 @@ public class CryptoUtil {
         return decryptByteBuf(data, key, spec);
     }
 
-    public static IvParameterSpec ivGenerator() {
+    public static byte[] ivGenerator() {
         SecureRandom random = new SecureRandom();
-        return new IvParameterSpec(random.generateSeed(16));
+        return new IvParameterSpec(random.generateSeed(16)).getIV();
     }
 
     public static Object encrypt(ByteBuf data, byte[] id, byte[] iv, byte[] secretKey) throws Exception {

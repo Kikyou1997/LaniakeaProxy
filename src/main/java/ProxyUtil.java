@@ -1,8 +1,4 @@
 import com.alibaba.fastjson.JSON;
-import com.andromedagalaxy.base.ControlCentre;
-import com.andromedagalaxy.base.constant.Constants;
-import com.andromedagalaxy.base.constant.FormatHttpMessage;
-import com.andromedagalaxy.base.persistence.User;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -178,10 +174,6 @@ public class ProxyUtil {
         return new String(bytes);
     }
 
-    public static User getUserInstanceFromByteBuf(ByteBuf byteBuf) {
-        String info = getStringFromByteBuf(byteBuf);
-        return JSON.parseObject(info, User.class);
-    }
 
     /*
     public static byte[] getSpecificBytesFromByteBuf(ByteBuf byteBuf) {
@@ -234,7 +226,6 @@ public class ProxyUtil {
             int bufferSize = chunk.readableBytes() >= 256 ? 256 : chunk.readableBytes();
             byteBuf[idx] = Unpooled.wrappedBuffer(new byte[bufferSize]);
             chunk.readBytes(byteBuf[idx], 0, bufferSize);
-            log.debug(HexDump.dump("Fuck these shit", ProxyUtil.getBytesFromByteBuf(byteBuf[idx])) + chunk.readableBytes());
             idx++;
         }
         log.debug("Fuck all these shit" + byteBuf.length);

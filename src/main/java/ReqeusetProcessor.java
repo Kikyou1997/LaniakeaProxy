@@ -33,7 +33,7 @@ public class ReqeusetProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         }
     }
 
-    private byte getRequestCode(ByteBuf msg) {
+    public static byte getRequestCode(ByteBuf msg) {
         return msg.readByte();
     }
 }
