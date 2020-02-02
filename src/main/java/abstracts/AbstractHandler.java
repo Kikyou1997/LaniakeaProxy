@@ -1,5 +1,6 @@
 package abstracts;
 
+import constants.Packets;
 import interfaces.Handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -26,6 +27,9 @@ public abstract class AbstractHandler<T, R> extends SimpleChannelInboundHandler<
 
     protected static Map<Integer/*用户id*/, byte[]/*iv*/> idIvMap = new ConcurrentHashMap<>();
 
+    protected static final int REQ_CODE_POS = Packets.MAGIC_LENGTH;
+
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, T msg) throws Exception {
         this.context = ctx;
@@ -47,14 +51,10 @@ public abstract class AbstractHandler<T, R> extends SimpleChannelInboundHandler<
         return idNameMap.get(id);
     }
 
-    protected int getId(ByteBuf buf) {
-        buf.readerIndex(1);
-        return buf.readInt();
+    protected int getId(ByteBuf buf){
+        return -1;
     }
 
-    protected byte[] getIv(int id) {
-        return idIvMap.get(id);
-    }
 
 
 

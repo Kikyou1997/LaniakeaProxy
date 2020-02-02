@@ -1,4 +1,5 @@
 import abstracts.AbstractHandler;
+import constants.Packets;
 import interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 
@@ -10,6 +11,20 @@ import static constants.ResponseCode.DATA_TRANS_RESP;
  * Created at 2020/2/1
  */
 public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Crypto {
+
+    private static final int ID_POS = REQ_CODE_POS + Packets.CODE_LENGTH;
+    private static final int TEXT_POS = ID_POS + Packets.ID_LENGTH;
+
+    private byte[] getIv(int id) {
+        return idIvMap.get(id);
+    }
+
+
+    @Override
+    protected int getId(ByteBuf buf) {
+        buf.readerIndex(ID_POS);
+        return buf.readInt();
+    }
 
     @Override
     public ByteBuf encrypt(ByteBuf raw) throws Exception {
@@ -30,7 +45,7 @@ public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Cry
         String name = super.getUsernameById(cypherText);
         byte[] secrets = Config.getUserSecretKeyBin(name);
         byte[] iv = getIv(getId(cypherText));
-        cypherText.readerIndex(5);
+        cypherText.readerIndex(TEXT_POS);
         byte[] raw = new byte[cypherText.readableBytes()];
         cypherText.readBytes(raw);
         raw = CryptoUtil.decrypt(raw, secrets, iv);
@@ -43,7 +58,7 @@ public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Cry
     @Override
     public ByteBuf handle(Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        byte code = ReqeusetProcessor.getRequestCode(buf);
+        byte code = RequestProcessor.getRequestCode(buf);
         switch (code) {
             // 表示这是客户端从其他程序收到的 要从客户端发送到服务器的报文
             case DATA_TRANS_REQ:

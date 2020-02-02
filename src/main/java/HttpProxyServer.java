@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpProxyServer {
 
+
     private ServerBootstrap server = new ServerBootstrap();
     private int bindPort;
     private String serverAddress;
@@ -44,13 +45,14 @@ public class HttpProxyServer {
                            String serverAddress,
                            NioEventLoopGroup acceptThreads,
                            NioEventLoopGroup workerThreads
-                           ) {
+    ) {
         this.server = server;
         this.bindPort = bindPort;
         this.serverAddress = serverAddress;
         this.acceptThreads = acceptThreads;
         this.workerThreads = workerThreads;
     }
+
     {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -59,6 +61,7 @@ public class HttpProxyServer {
             }
         });
     }
+
     public void start(ChannelInitializer<NioServerSocketChannel> initializer) {
         server
                 .group(new NioEventLoopGroup(acceptThreadNumber), new NioEventLoopGroup(workerThreadNumber))

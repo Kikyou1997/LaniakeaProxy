@@ -5,9 +5,9 @@ package constants;
  * Created at 2020/1/31
  */
 public interface RequestCode {
-
-    byte GET_CLOCK_REQ = 0X1;
-    byte AUTH_REQ= 0X2;
-    byte INIT_CONN_REQ = 0X3;
+    byte GET_CLOCK_REQ = 0x1;
+    byte AUTH_REQ= 0x2;
+    byte INIT_CONN_REQ = 0x3;
     byte DATA_TRANS_REQ = 0x4;
+    byte CONNECT = 0x5;
 }

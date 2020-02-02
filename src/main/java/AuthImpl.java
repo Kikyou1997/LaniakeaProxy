@@ -1,8 +1,8 @@
 import abstracts.AbstractHandler;
+import constants.Packets;
 import constants.ResponseCode;
 import interfaces.Auth;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -17,10 +17,13 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
     private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
     private String name = null;
 
+    private static final int HASH_POS = REQ_CODE_POS + Packets.CODE_LENGTH;
+
     @Override
     public boolean isValid(Object msg) {
         ByteBuf buf = (ByteBuf) msg;
         byte[] receivedHash = new byte[Auth.HASH_LENGTH];
+        buf.readerIndex(HASH_POS);
         buf.readBytes(receivedHash);
         byte[] usernameBytes = new byte[buf.readableBytes()];
         buf.readBytes(usernameBytes);

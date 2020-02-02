@@ -1,4 +1,5 @@
 import static constants.RequestCode.*;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -8,11 +9,11 @@ import io.netty.util.ReferenceCountUtil;
  * @author kikyou
  * Created at 2020/2/1
  */
-public class ReqeusetProcessor extends SimpleChannelInboundHandler<ByteBuf> {
+public class RequestProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Client2ProxyConnection client2ProxyConnection = null;
 
-    public ReqeusetProcessor(Client2ProxyConnection client2ProxyConnection) {
+    public RequestProcessor(Client2ProxyConnection client2ProxyConnection) {
         this.client2ProxyConnection = client2ProxyConnection;
     }
 
