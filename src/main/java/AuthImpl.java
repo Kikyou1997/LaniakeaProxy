@@ -2,6 +2,7 @@ import abstracts.AbstractHandler;
 import constants.ResponseCode;
 import interfaces.Auth;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
 
-    private AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
+    private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
     private String name = null;
 
     @Override
@@ -40,7 +41,10 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
                 int id = ids.getAndIncrement();
                 idTimeMap.put(id, System.currentTimeMillis());
                 idNameMap.put(id, name);
-                context.writeAndFlush(createAuthResponse(id));
+                byte[] iv = CryptoUtil.ivGenerator();
+                ByteBuf resp = createAuthResponse(id, iv);
+                sendResponse(resp);
+                idIvMap.put(id, iv);
             } else {
                 context.channel().close();
             }
@@ -48,7 +52,9 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
         return null;
     }
 
-    private ByteBuf createAuthResponse(int id) {
-        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), CryptoUtil.ivGenerator());
+    private ByteBuf createAuthResponse(int id, byte[] iv) {
+        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), iv);
     }
+
+
 }

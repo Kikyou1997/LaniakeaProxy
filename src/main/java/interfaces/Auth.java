@@ -6,6 +6,7 @@ package interfaces;
  */
 public interface Auth extends Handler<Void>{
 
+
     int HASH_LENGTH = 32;
 
     boolean isValid(Object msg) throws Exception;

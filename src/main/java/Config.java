@@ -13,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class Config implements Serializable {
 
+    private static Config config = null;
     public static transient String CLIENT_CONFIG_FILE_PATH = "/etc/andromeda/config.json";
     public static transient String SERVER_CONFIG_FILE_PATH = "/etc/andromeda/server_config.json";
     private static transient HashMap<String/*用户名*/, User/*用户信息*/> userInfoMap = new HashMap<>();
@@ -34,6 +35,22 @@ public class Config implements Serializable {
         /*BASE64编码*/
         private String secretKey;
         private Long usedTraffics;
+        private transient byte[] secretKeyBin;
+
+        public byte[] getSecretKeyBin() {
+            if (secretKeyBin == null) {
+                secretKeyBin = CryptoUtil.decodeFromString(secretKey);
+            }
+            return secretKeyBin;
+        }
+    }
+
+    static {
+        // loadConfig File
+    }
+
+    {
+        initUserInfoMap();
     }
 
     public void initUserInfoMap() {
@@ -44,5 +61,13 @@ public class Config implements Serializable {
 
     public static User getUserInfo(String username) {
         return userInfoMap.get(username);
+    }
+
+    public static byte[] getUserSecretKeyBin(String username) {
+        User u = getUserInfo(username);
+        if (u != null) {
+            return u.getSecretKeyBin();
+        }
+        return null;
     }
 }

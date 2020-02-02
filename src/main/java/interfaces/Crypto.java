@@ -13,7 +13,7 @@ public interface Crypto extends Handler<ByteBuf> {
     */
     int CRYPTO_INDEX = 5;
 
-    ByteBuf encrypt(ByteBuf raw);
+    ByteBuf encrypt(ByteBuf raw) throws Exception;
 
-    ByteBuf decrypt(ByteBuf cypherText);
+    ByteBuf decrypt(ByteBuf cypherText) throws Exception;
 }
