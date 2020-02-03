@@ -305,6 +305,9 @@ public class ProxyUtil {
         channel.close();
     }
 
+    public static String constructSocketAddressString(String ip, int port) {
+        return ip + ":" + port;
+    }
 
 
 }

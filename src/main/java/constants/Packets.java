@@ -12,4 +12,11 @@ public interface Packets {
     int HASH_LENGTH = 32;
     int MAGIC_LENGTH = 2;
     int CODE_LENGTH = 1;
+    int LENGTH_FILED_LENGTH = 4;
+    int IPV_LENGTH = 1;
+    int IPV4_LENGTH = 4;
+    int IPV6_LENGTH = 16;
+
+    byte IPV4 = 0;
+    byte IPV6 = 1;
 }

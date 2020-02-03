@@ -7,6 +7,7 @@ import static constants.RequestCode.DATA_TRANS_REQ;
 import static constants.ResponseCode.DATA_TRANS_RESP;
 
 /**
+ * 无状态
  * @author kikyou
  * Created at 2020/2/1
  */
@@ -58,7 +59,7 @@ public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Cry
     @Override
     public ByteBuf handle(Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-        byte code = RequestProcessor.getRequestCode(buf);
+        byte code = MessageProcessor.getRequestCode(buf);
         switch (code) {
             // 表示这是客户端从其他程序收到的 要从客户端发送到服务器的报文
             case DATA_TRANS_REQ:

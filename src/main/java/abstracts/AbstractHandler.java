@@ -29,7 +29,6 @@ public abstract class AbstractHandler<T, R> extends SimpleChannelInboundHandler<
 
     protected static final int REQ_CODE_POS = Packets.MAGIC_LENGTH;
 
-
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, T msg) throws Exception {
         this.context = ctx;
@@ -56,9 +55,12 @@ public abstract class AbstractHandler<T, R> extends SimpleChannelInboundHandler<
     }
 
 
-
+    public void setContext(ChannelHandlerContext context) {
+        this.context = context;
+    }
 
     public static void main(String[] args) throws Exception {
 
     }
+
 }

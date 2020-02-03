@@ -7,7 +7,6 @@ package constants;
 public interface RequestCode {
     byte GET_CLOCK_REQ = 0x1;
     byte AUTH_REQ= 0x2;
-    byte INIT_CONN_REQ = 0x3;
     byte DATA_TRANS_REQ = 0x4;
     byte CONNECT = 0x5;
 }
