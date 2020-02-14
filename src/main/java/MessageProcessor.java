@@ -1,9 +1,10 @@
 import static constants.RequestCode.*;
 
 import constants.Packets;
-import constants.RequestCode;
+import static constants.ResponseCode.*;
 import interfaces.Handler;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kikyou
  * Created at 2020/2/1
  */
+@ChannelHandler.Sharable
 public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Map<Byte, Handler> byteHandlerMap = new ConcurrentHashMap<>();
@@ -43,13 +45,11 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 return;
             case AUTH_REQ:
                 handler = byteHandlerMap.get(AUTH_REQ);
-                handler.setContext(ctx);
-                handler.handle(msg);
+                handler.handle(msg, ctx);
                 return;
             case DATA_TRANS_REQ:
                 handler = byteHandlerMap.get(DATA_TRANS_REQ);
-                handler.setContext(ctx);
-                handler.handle(msg);
+                handler.handle(msg, ctx);
                 break;
             case CONNECT:
                 byte ipv = getIpAddressVersion(msg);
@@ -62,9 +62,11 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 } else if (ipv == Packets.IPV6) {
                     address = new byte[Packets.IPV6_LENGTH];
                     msg.readBytes(address);
-                    port = (int)msg.readShort();
+                    port = (int) msg.readShort();
                 }
-
+                break;
+            case CONN_ESTAB:
+                break;
         }
         removeRedundantHeader(msg);
         ctx.fireChannelRead(msg);

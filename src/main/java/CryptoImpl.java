@@ -2,6 +2,7 @@ import abstracts.AbstractHandler;
 import constants.Packets;
 import interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 
 import static constants.RequestCode.DATA_TRANS_REQ;
 import static constants.ResponseCode.DATA_TRANS_RESP;
@@ -11,7 +12,7 @@ import static constants.ResponseCode.DATA_TRANS_RESP;
  * @author kikyou
  * Created at 2020/2/1
  */
-public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Crypto {
+public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
 
     private static final int ID_POS = REQ_CODE_POS + Packets.CODE_LENGTH;
     private static final int TEXT_POS = ID_POS + Packets.ID_LENGTH;
@@ -57,7 +58,8 @@ public class CryptoImpl extends AbstractHandler<ByteBuf, ByteBuf> implements Cry
 
 
     @Override
-    public ByteBuf handle(Object msg) throws Exception {
+    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+        super.context = ctx;
         ByteBuf buf = (ByteBuf) msg;
         byte code = MessageProcessor.getRequestCode(buf);
         switch (code) {

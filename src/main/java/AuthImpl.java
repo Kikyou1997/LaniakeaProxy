@@ -4,6 +4,7 @@ import constants.ResponseCode;
 import interfaces.Auth;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -13,8 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author kikyou
  * Created at 2020/1/31
  */
-@ChannelHandler.Sharable
-public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
+public class AuthImpl extends AbstractHandler<Void> implements Auth {
 
     private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
     private ThreadLocal<String> name = new ThreadLocal<>();
@@ -40,7 +40,8 @@ public class AuthImpl extends AbstractHandler<ByteBuf, Void> implements Auth {
     }
 
     @Override
-    public Void handle(Object msg) throws Exception {
+    public Void handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+        super.context = ctx;
         if (msg instanceof ByteBuf) {
             if (isValid(msg)) {
                 int id = ids.getAndIncrement();
