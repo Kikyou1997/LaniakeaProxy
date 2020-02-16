@@ -1,10 +1,10 @@
 package com.proxy.client;
 
 import base.*;
+import base.constants.RequestCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -27,43 +27,48 @@ public class HttpConnectionStream extends AbstractConnectionStream {
     }
 
     protected void initStream() {
-        // 检查是否是Http Connect请求
-        addSteps(new ConnectionStep() {
-            @Override
-            public Boolean handle(Object msg, ChannelHandlerContext ctx) throws Exception {
-                ByteBuf buf = (ByteBuf) msg;
-                buf.readerIndex(0);
-                Boolean result = checkHttpHeader(buf);
-                if (steps.peek() != null) {
-                    steps.peek().setLastResult(result);
-                }
-                return result;
-            }
+        super
+                // 检查是否是Http Connect请求
+                .addStep(new ConnectionStep() {
+                    @Override
+                    public Boolean handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                        ByteBuf buf = (ByteBuf) msg;
+                        buf.readerIndex(0);
+                        Boolean result = checkHttpHeader(buf);
+                        if (steps.peek() != null) {
+                            steps.peek().setLastResult(result);
+                        }
+                        return result;
+                    }
 
-            private boolean checkHttpHeader(ByteBuf buf) {
-                String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
-                return httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect");
-            }
-        })
+                    private boolean checkHttpHeader(ByteBuf buf) {
+                        String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
+                        return httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect");
+                    }
+                })
                 // 同服务器建立连接并根据是否是Connect请求以及连接建立是否成功 回复ConnectionEstablished
-                .addSteps(new ConnectionStep() {
+                .addStep(new ConnectionStep() {
                     @Override
                     public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
                         Boolean last = (Boolean) lastResult;
                         ByteBuf buf = (ByteBuf) msg;
                         SocketAddressEntry socketAddress = getSocketAddressFromBuf(buf, last);
+                        boolean connectRequestSent = false;
                         try {
-                            p2SConnection = new Proxy2ServerConnection(socketAddress);
-
+                            p2SConnection = new Proxy2ServerConnection(socketAddress, HttpConnectionStream.this);
+                            byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
+                            ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
+                                    Converter.convertShort2ByteArray((short) hostBytes.length), hostBytes, Converter.convertShort2ByteArray(socketAddress.getPort()));
+                            connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
                         } catch (Exceptions.ConnectionTimeoutException e) {
                             steps.peek().setLastResult(false);
                             return Boolean.valueOf(false);
                         }
-                        ChannelFuture future = null;
+                        boolean responseSent = false;
                         if (last) {
-                            future = c2PConnection.writeData(generateHttpConnectionEstablishedResponse()).syncUninterruptibly();
+                            responseSent = c2PConnection.writeData(generateHttpConnectionEstablishedResponse()).syncUninterruptibly().isSuccess();
                         }
-                        steps.peek().setLastResult(future == null || future.isSuccess());
+                        steps.peek().setLastResult(connectRequestSent && responseSent);
                         return Boolean.valueOf(true);
                     }
 
@@ -91,12 +96,27 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                         byte[] bytes = s.getBytes();
                         ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.buffer();
                         byteBuf.writeBytes(bytes);
-                        int crlf = (HttpConstants.CR << 8) | HttpConstants.LF;
+                        short crlf = (HttpConstants.CR << 8) | HttpConstants.LF;
                         //write crlf to end line
                         ByteBufUtil.writeShortBE(byteBuf, crlf);
                         // write crlf to mark the end of http response
                         ByteBufUtil.writeShortBE(byteBuf, crlf);
                         return byteBuf;
+                    }
+                })
+                // 将代理服务器返回的消息进行处理 并将处理后得到的原始数据发送给客户端 也就是说这一步应该是由p2s的doRead方法调用
+                // 暂时假定p2s调用该方法时已经将报文处理完毕
+                .addStep(new ConnectionStep() {
+                    @Override
+                    public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                        ByteBuf buf = (ByteBuf)msg;
+                        boolean result = false;
+                        int times = 0;
+                        while (!result && times < 3) {
+                            result = c2PConnection.writeData(buf).syncUninterruptibly().isSuccess();
+                            times++;
+                        }
+                        return result;
                     }
                 });
     }

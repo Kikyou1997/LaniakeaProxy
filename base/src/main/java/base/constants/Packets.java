@@ -23,4 +23,5 @@ public interface Packets {
 
     byte IPV4 = 0;
     byte IPV6 = 1;
+
 }

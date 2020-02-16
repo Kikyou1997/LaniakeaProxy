@@ -54,6 +54,14 @@ public class Converter {
         return ans;
     }
 
+    public static byte[] convertShort2ByteArray(short val) {
+        byte[] ans = new byte[2];
+        int count = 8;
+        ans[0] = (byte)(val >>> 4);
+        ans[1] = (byte)(val & 0xf);
+        return ans;
+    }
+
 
     public static void main(String[] args) throws Exception {
 

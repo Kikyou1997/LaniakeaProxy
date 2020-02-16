@@ -15,9 +15,10 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     private SocketAddressEntry socketAddress;
     private Channel channel;
-
-    public Proxy2ServerConnection(SocketAddressEntry entry) throws Exceptions.ConnectionTimeoutException {
+    private AbstractConnectionStream connectionStream;
+    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
         this.socketAddress = entry;
+        this.connectionStream = stream;
         if (!buildConnection2Remote(entry)) {
             throw new Exceptions.ConnectionTimeoutException(entry);
         }
@@ -30,7 +31,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
 
     @Override
-    protected ChannelFuture writeData(ByteBuf data) {
+    public ChannelFuture writeData(ByteBuf data) {
         return remoteServer.writeAndFlush(data);
     }
 

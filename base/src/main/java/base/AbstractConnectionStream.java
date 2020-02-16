@@ -1,6 +1,7 @@
 package base;
 
 import base.interfaces.Handler;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 import java.util.LinkedList;
@@ -21,7 +22,7 @@ public abstract class AbstractConnectionStream {
         initStream();
     }
 
-    public AbstractConnectionStream addSteps(ConnectionStep step) {
+    public AbstractConnectionStream addStep(ConnectionStep step) {
         steps.offer(step);
         return this;
     }
@@ -36,5 +37,9 @@ public abstract class AbstractConnectionStream {
         }
     }
 
+    protected void then(ByteBuf buf, ChannelHandlerContext context) throws Exception{
+        ConnectionStep step = steps.poll();
+        step.handle(buf, context);
+    }
 
 }
