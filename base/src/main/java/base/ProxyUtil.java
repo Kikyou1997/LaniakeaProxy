@@ -63,23 +63,6 @@ public class ProxyUtil {
         return getRemoteAddressAndPortFromChannel(ctx.channel());
     }
 
-    public static String getHostFromHttpMessage(String httpMessage) { // will use regex later
-        for (String s : httpMessage.split("\n")) {
-            if (httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect")) {
-                String temp[] = s.split(" ");
-                return temp[1];
-            }
-            if (s.startsWith("HOST") || (s.startsWith("host")) || s.startsWith("Host")) {
-                String mid[] = s.split(":");
-                if (mid.length < 3)
-                    return mid[1].trim();
-                else return (mid[1] + ":" + mid[2]).trim();
-            }
-        }
-
-
-        return null;
-    }
 
 
     public static byte[] getBytesFromByteBuf(ByteBuf byteBuf) {
@@ -105,69 +88,14 @@ public class ProxyUtil {
         return byteBuf;
     }
 
-    /**
-     * 现在感觉其实这个方法不该这么写,完全可以定义一个ConnectionEstablishedResponse的常量
-     *
-     * @param channel
-     */
-    public static void sendConnectionEstablishedResponse(Channel channel) {
-        FullHttpResponse response = new FormatHttpMessage(HttpVersion.HTTP_1_1, FormatHttpMessage.CONNECTION_ESTABLISHED);
-        String s = response.toString();
-        byte[] bytes = s.getBytes();
-        ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.buffer();
-        byteBuf.writeBytes(bytes);
-        int crlf = (HttpConstants.CR << 8) | HttpConstants.LF;
-        //write crlf to end line
-        ByteBufUtil.writeShortBE(byteBuf, crlf);
-        // write crlf to mark the end of http response
-        ByteBufUtil.writeShortBE(byteBuf, crlf);
-        if (ControlCentre.auth) {
-            // used to padding payload to 272 bytes, because the fucking netty FixedLengthFrameDecoder will not pass packet to next handler until
-            //it has collect 272 bytes, however the total size of ESR is only 107 bytes
-            byteBuf.writeBytes(new byte[233]);
-        }
-        channel.writeAndFlush(byteBuf).addListener(future -> {
-            if (future.isSuccess()) {
-                log.debug(s + " has sent to " + channel.remoteAddress());
-            } else {
-                log.error(s + "sent to " + channel.remoteAddress() + " failed", future.cause());
-            }
-        });
-        //channel.pipeline().remove("shit");
-
-    }
 
 
-    /**
-     * @param httpMessage as it's name
-     * @return true if it has
-     */
 
-    public static boolean checkConnectHeader(String httpMessage) {
-        return (httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect"));
-    }
 
     public static boolean checkRawHttpResponse(String httpMessage) {
         return (httpMessage.startsWith("Http") || httpMessage.startsWith("HTTP") || httpMessage.startsWith("http"));
     }
 
-    public static boolean checkConnEstablishedResponse(String msg) {
-        return msg.startsWith(Constants.CONNECTION_ESTABLISHED.toString().substring(0, 32));
-    }
-
-
-    public static String getHttpMessageFromByteBuf(Object msg) {
-        byte[] bytes = null;
-        ByteBuf byteBuf = (ByteBuf) msg;
-        if (ControlCentre.auth && !ControlCentre.client) {
-            bytes = new byte[((ByteBuf) msg).readableBytes()];
-            byteBuf.getBytes(8, bytes);
-        } else {
-            bytes = new byte[((ByteBuf) msg).readableBytes()];
-            byteBuf.getBytes(0, bytes);
-        }
-        return new String(bytes);
-    }
 
     public static String getStringFromByteBuf(Object msg) {
         byte[] bytes = new byte[((ByteBuf) msg).readableBytes()];

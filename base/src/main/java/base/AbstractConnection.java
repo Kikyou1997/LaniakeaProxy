@@ -9,7 +9,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
  * @author kikyou
  * @date 2020/1/29
  */
-public abstract class AbstractConnection extends SimpleChannelInboundHandler<Object> {
+public abstract class AbstractConnection extends SimpleChannelInboundHandler<ByteBuf> {
 
     protected Channel remoteServer;
     private static int THREAD_NUMBER = 1;
@@ -18,7 +18,7 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Obj
     protected EventLoopGroup eventLoops = new NioEventLoopGroup(THREAD_NUMBER);
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         doRead(ctx, msg);
     }
 
@@ -27,12 +27,12 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Obj
      该方法
      成功返回true
      */
-    protected abstract boolean buildConnection2Remote(String ip, int port);
+    protected abstract boolean buildConnection2Remote(SocketAddressEntry socketAddress);
 
-    protected abstract void doRead(ChannelHandlerContext ctx, Object msg);
+    protected abstract void doRead(ChannelHandlerContext ctx,ByteBuf msg);
 
 
-    protected abstract ChannelFuture writeData(ByteBuf data);
+    public abstract ChannelFuture writeData(ByteBuf data);
 
     abstract protected void disconnect();
 
@@ -47,7 +47,7 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Obj
         @Override
         protected void initChannel(NioSocketChannel ch) throws Exception {
             ch.pipeline().
-                    addLast(new HeadersPrepender.RequestHeadersPrepender(id))
+                    addLast(new HeadersPrepender.RequestHeadersPrepender(id));
         }
     }
 

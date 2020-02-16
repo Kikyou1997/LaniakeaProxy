@@ -13,18 +13,18 @@ import io.netty.channel.ChannelOption;
  */
 public class Proxy2ServerConnection extends AbstractConnection {
 
-    private String ip;
-    private int port;
+    private SocketAddressEntry socketAddress;
     private Channel channel;
 
-    public Proxy2ServerConnection(String ip, int port) {
-        this.ip = ip;
-        this.port = port;
-        buildConnection2Remote(ip, port);
+    public Proxy2ServerConnection(SocketAddressEntry entry) throws Exceptions.ConnectionTimeoutException {
+        this.socketAddress = entry;
+        if (!buildConnection2Remote(entry)) {
+            throw new Exceptions.ConnectionTimeoutException(entry);
+        }
     }
 
     @Override
-    protected void doRead(ChannelHandlerContext ctx, Object msg) {
+    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
 
     }
 
@@ -35,7 +35,9 @@ public class Proxy2ServerConnection extends AbstractConnection {
     }
 
     @Override
-    protected boolean buildConnection2Remote(String ip, int port) {
+    protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
+        String ip = socketAddress.getHost();
+        short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(super.eventLoops);
         bootstrap.option(ChannelOption.TCP_NODELAY, true);

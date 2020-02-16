@@ -10,6 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,18 +54,8 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 handler.handle(msg, ctx);
                 break;
             case CONNECT:
-                byte ipv = getIpAddressVersion(msg);
-                byte[] address = null;
-                int port = 0;
-                if (ipv == Packets.IPV4) {
-                    address = new byte[Packets.IPV4_LENGTH];
-                    msg.readBytes(address);
-                    port = (int) msg.readShort();
-                } else if (ipv == Packets.IPV6) {
-                    address = new byte[Packets.IPV6_LENGTH];
-                    msg.readBytes(address);
-                    port = (int) msg.readShort();
-                }
+                SocketAddressEntry entry = getHostFromBuf(msg);
+                // to be continued
                 break;
         }
         removeRedundantHeader(msg);
@@ -84,8 +75,12 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         buf.writeBytes(msg);
     }
 
-    private byte getIpAddressVersion(ByteBuf buf) {
+    private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
         buf.readerIndex(DEST_POS);
-        return buf.readByte();
+        short length = buf.readShort();
+        String host =  buf.readCharSequence(length, StandardCharsets.UTF_8).toString();
+        short port = buf.readShort();
+        return new SocketAddressEntry(host, port);
     }
+
 }

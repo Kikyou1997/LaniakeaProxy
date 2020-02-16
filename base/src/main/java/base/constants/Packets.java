@@ -19,6 +19,7 @@ public interface Packets {
     int IPV6_LENGTH = 16;
     int CLOCK_LENGTH = 8;
     int IV_LENGTH = 16;
+    int HOST_LENGTH = 2;
 
     byte IPV4 = 0;
     byte IPV6 = 1;

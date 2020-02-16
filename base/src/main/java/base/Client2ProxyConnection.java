@@ -5,7 +5,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,24 +14,34 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Client2ProxyConnection extends AbstractConnection {
 
-    private Map<String/*远程服务器的ip端口*/, Proxy2ServerConnection/*到远程服务器的连接*/> addressPort2ConnectionMap = new ConcurrentHashMap<>();
+    private Map<String/*客户端套接字*/, Proxy2ServerConnection/*到远程服务器的连接*/> addressPort2ConnectionMap = new ConcurrentHashMap<>();
 
-    private Channel client;
+    private Channel clientChannel;
 
-    public Client2ProxyConnection(Channel channel, String ip, int port) {
-        this.client = channel;
-        String socketAddress = ProxyUtil.constructSocketAddressString(ip, port);
-        addressPort2ConnectionMap.putIfAbsent(socketAddress, new Proxy2ServerConnection(ip, port));
+    private AbstractConnectionStream connectionStream = null;
+
+    private SocketAddressEntry socketAddress;
+
+    // 该构造器适用于 服务端模式
+    public Client2ProxyConnection(Channel channel, SocketAddressEntry entry) {
+        this.clientChannel = channel;
+        addressPort2ConnectionMap.putIfAbsent(socketAddress.toString(), new Proxy2ServerConnection(entry));
     }
 
 
-    @Override
-    protected boolean buildConnection2Remote(String ip, int port) {
+    public Client2ProxyConnection() {
     }
 
     @Override
-    protected void doRead(ChannelHandlerContext ctx, Object msg) {
+    protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
+        
+    }
 
+    @Override
+    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
+        if (connectionStream == null) {
+            connectionStream = new HttpConnectionStream(this);
+        }
     }
 
     @Override
@@ -43,7 +52,7 @@ public class Client2ProxyConnection extends AbstractConnection {
     }
 
     @Override
-    protected ChannelFuture writeData(ByteBuf data) {
+    public ChannelFuture writeData(ByteBuf data) {
         return null;
     }
 }
