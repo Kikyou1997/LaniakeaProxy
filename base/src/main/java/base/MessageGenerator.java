@@ -18,7 +18,6 @@ public class MessageGenerator {
     public static ByteBuf generateDirectBuf(byte code, byte[]... content) {
         int totalLength = content == null ? 1 : 1 + content.length;
         ByteBuf buf = allocator.directBuffer(totalLength);
-        buf.writeByte(Packets.MAGIC);
         buf.writeByte(code);
         if (content != null) {
             for (byte[] b : content) {
@@ -30,7 +29,6 @@ public class MessageGenerator {
 
     public static ByteBuf generateClockResponse() {
         ByteBuf buf = allocator.directBuffer(CLOCK_RESP_SIZE);
-        buf.writeByte(Packets.MAGIC);
         buf.writeByte(ResponseCode.CLOCK_RESP);
         buf.writeLong(Clock.getTime());
         return buf;

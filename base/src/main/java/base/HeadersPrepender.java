@@ -36,7 +36,6 @@ public abstract class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> 
             out.add(ctx.alloc().buffer(Packets.FILED_CODE_LENGTH).writeByte(RequestCode.DATA_TRANS_REQ));
             out.add(ctx.alloc().buffer(Packets.FILED_LENGTH_LEN).writeInt(length));
             out.add(ctx.alloc().buffer(Packets.FILED_ID_LENGTH).writeInt(id));
-
         }
     }
 

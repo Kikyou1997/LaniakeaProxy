@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<ByteBuf> implements Handler<R> {
 
-    private int clientId = -1;
+    protected int clientId = -1;
 
     protected static final int retryTimes = 3;
 
@@ -56,11 +56,14 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
         return idNameMap.get(id);
     }
 
+    // 其实际上 应该把它设置为抽象方法 在client/server module中分别实现其getId方法 但是我懒得改了 就先这样吧
     protected int getId(ByteBuf buf) {
         if (clientId != -1) {
             return clientId;
+        } else {
+            buf.readerIndex(Packets.FILED_CODE_LENGTH);
+            return buf.readInt();
         }
-        return -1;
     }
 
     @Override

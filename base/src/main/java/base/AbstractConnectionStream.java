@@ -55,4 +55,9 @@ public abstract class AbstractConnectionStream {
         return steps.poll();
     }
 
+    public void close() {
+        p2SConnection.disconnect();
+        c2PConnection.disconnect();
+    }
+
 }

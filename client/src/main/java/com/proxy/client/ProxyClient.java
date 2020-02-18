@@ -34,17 +34,7 @@ public class ProxyClient extends AbstractProxy {
         bootstrap.childOption(ChannelOption.TCP_NODELAY, true);
         bootstrap.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
                 Config.config.getBindPort());
-        bootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
-            @Override
-            protected void initChannel(NioSocketChannel ch) throws Exception {
-                ch.pipeline()
-                        .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
-                        .addLast(new Client2ProxyConnection())
-                        .addLast(new CryptoImpl(ClientContext.id, ClientContext.iv))
-                        .addLast();
-
-            }
-        });
+        bootstrap.childHandler(new Client2ProxyConnection());
     }
 
     private void getIdFromRemoteServer(String ip, int port) {
@@ -54,7 +44,6 @@ public class ProxyClient extends AbstractProxy {
         b.handler(new SimpleChannelInboundHandler<ByteBuf>() {
             @Override
             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-                msg.readerIndex(Packets.FILED_MAGIC_LENGTH);
                 byte code = msg.readByte();
                 switch (code) {
                     case ResponseCode
@@ -63,10 +52,10 @@ public class ProxyClient extends AbstractProxy {
                         ctx.channel().writeAndFlush(generateAuthRequest(clockTime));
                         break;
                     case ResponseCode.AUTH_RESP:
-                        ClientContext.id = msg.readInt();
-                        byte[] iv = new byte[Packets.IV_LENGTH];
+                        int id = msg.readInt();
+                        byte[] iv = new byte[Packets.FILED_IV_LENGTH];
                         msg.readBytes(iv);
-                        ClientContext.iv = iv;
+                        ClientContext.initContext(id, iv);
                 }
             }
         });
@@ -86,16 +75,15 @@ public class ProxyClient extends AbstractProxy {
         }
     }
 
-
     private ByteBuf generateClockRequest() {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_MAGIC_LENGTH + Packets.FILED_CODE_LENGTH);
-        buf.writeShort(Packets.MAGIC).writeByte(RequestCode.GET_CLOCK_REQ);
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_CODE_LENGTH);
+        buf.writeByte(RequestCode.GET_CLOCK_REQ);
         return buf;
     }
 
     private ByteBuf generateAuthRequest(long clockTime) {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_MAGIC_LENGTH + Packets.FILED_CODE_LENGTH + Packets.FILED_HASH_LENGTH);
-        buf.writeShort(Packets.MAGIC).writeShort(RequestCode.AUTH_REQ).writeBytes(
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_CODE_LENGTH + Packets.FILED_HASH_LENGTH);
+        buf.writeShort(RequestCode.AUTH_REQ).writeBytes(
                 CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))
         );
         return buf;

@@ -16,6 +16,9 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
     // UNIT:millisecond
     protected static int CONNECT_TIME_OUT = 2000;
     protected EventLoopGroup eventLoops = new NioEventLoopGroup(THREAD_NUMBER);
+    protected AbstractConnectionStream.ConnectionStep currentStep;
+    protected AbstractConnectionStream connectionStream;
+
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
@@ -26,7 +29,9 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
 
     public abstract ChannelFuture writeData(ByteBuf data);
 
-    abstract protected void disconnect();
+    protected void disconnect() {
+        connectionStream.close();
+    }
 
     protected static class Client2ProxyChannelInitializer extends ChannelInitializer<NioSocketChannel>{
 
@@ -55,5 +60,10 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
         protected void initChannel(NioSocketChannel ch) throws Exception {
             ch.pipeline().addLast(new HeadersPrepender.ResponseHeadersPrepender(id));
         }
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        disconnect();
     }
 }

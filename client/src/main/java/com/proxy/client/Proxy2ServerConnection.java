@@ -16,7 +16,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     private SocketAddressEntry socketAddress;
     private Channel channel;
-    private AbstractConnectionStream connectionStream;
 
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
         this.socketAddress = entry;
@@ -28,7 +27,10 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-
+        if (currentStep == null) {
+            currentStep = connectionStream.currentStep();
+        }
+        currentStep.handle(msg, ctx);
     }
 
 
@@ -52,7 +54,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
     }
 
     @Override
-    protected void disconnect() {
+    public void disconnect() {
         super.remoteServer.close();
     }
 
@@ -62,7 +64,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
             ch.pipeline()
                     .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
                     //  返回的包不包括id字段
-                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.HEADERS_DATA_RESP_LEN, 4));
+                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FILED_CODE_LENGTH, 4));
 
         }
     }

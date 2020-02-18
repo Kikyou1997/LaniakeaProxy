@@ -2,17 +2,11 @@ package com.proxy.client;
 
 import base.AbstractConnection;
 
-import static base.AbstractConnectionStream.ConnectionStep;
-
-import base.AbstractConnectionStream;
 import base.SocketAddressEntry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author kikyou
@@ -20,15 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Client2ProxyConnection extends AbstractConnection {
 
-    private Map<String/*客户端套接字*/, Proxy2ServerConnection/*到远程服务器的连接*/> addressPort2ConnectionMap = new ConcurrentHashMap<>();
-
     private Channel clientChannel;
-
-    private AbstractConnectionStream connectionStream = null;
 
     private SocketAddressEntry socketAddress;
 
-    private ConnectionStep currentStep;
 
     // 该构造器适用于 服务端模式
     public Client2ProxyConnection(Channel channel) {
@@ -55,15 +44,12 @@ public class Client2ProxyConnection extends AbstractConnection {
         }
     }
 
-    @Override
-    protected void disconnect() {
-        for (String s : addressPort2ConnectionMap.keySet()) {
-            addressPort2ConnectionMap.get(s).disconnect();
-        }
-    }
 
     @Override
     public ChannelFuture writeData(ByteBuf data) {
         return clientChannel.writeAndFlush(data);
     }
+
+
+
 }

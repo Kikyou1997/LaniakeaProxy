@@ -11,9 +11,9 @@ public abstract class AbstractCrypto implements Crypto {
 
 
 
-    public abstract byte[] encrypt(ByteBuf raw);
+    public abstract ByteBuf encrypt(ByteBuf raw);
 
-    public abstract byte[] decrypt(ByteBuf cypherText);
+    public abstract ByteBuf decrypt(ByteBuf cypherText);
 
     public abstract void handle(Object msg) throws Exception;
 

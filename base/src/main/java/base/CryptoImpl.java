@@ -28,12 +28,6 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
     }
 
     @Override
-    protected int getId(ByteBuf buf) {
-        buf.readerIndex(ID_POS);
-        return buf.readInt();
-    }
-
-    @Override
     public ByteBuf encrypt(ByteBuf raw) throws Exception {
         String name = super.getUsernameById(raw);
         byte[] secrets = Config.getUserSecretKeyBin(name);
@@ -73,4 +67,5 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
         ByteBuf buf = (ByteBuf) msg;
         return decrypt(buf);
     }
+
 }
