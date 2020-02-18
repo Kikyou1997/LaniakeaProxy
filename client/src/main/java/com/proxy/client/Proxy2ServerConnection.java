@@ -1,11 +1,12 @@
-package base;
+package com.proxy.client;
 
+import base.*;
+import base.constants.Packets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.*;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 /**
  * @author kikyou
@@ -16,6 +17,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
     private SocketAddressEntry socketAddress;
     private Channel channel;
     private AbstractConnectionStream connectionStream;
+
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
         this.socketAddress = entry;
         this.connectionStream = stream;
@@ -25,7 +27,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
     }
 
     @Override
-    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
+    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
     }
 
@@ -35,15 +37,15 @@ public class Proxy2ServerConnection extends AbstractConnection {
         return remoteServer.writeAndFlush(data);
     }
 
-    @Override
     protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
-        String ip = socketAddress.getHost();
+        String host = socketAddress.getHost();
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(super.eventLoops);
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
-        ChannelFuture future = bootstrap.connect(ip, port);
+        bootstrap.handler(new P2SChannelInitializer());
+        ChannelFuture future = bootstrap.connect(host, port);
         future.syncUninterruptibly();
         this.channel = future.channel();
         return future.isSuccess();
@@ -54,5 +56,15 @@ public class Proxy2ServerConnection extends AbstractConnection {
         super.remoteServer.close();
     }
 
+    private static class P2SChannelInitializer extends ChannelInitializer<NioSocketChannel> {
+        @Override
+        protected void initChannel(NioSocketChannel ch) throws Exception {
+            ch.pipeline()
+                    .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
+                    //  返回的包不包括id字段
+                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.HEADERS_DATA_RESP_LEN, 4));
+
+        }
+    }
 
 }

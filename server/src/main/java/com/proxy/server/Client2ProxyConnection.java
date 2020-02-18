@@ -1,5 +1,8 @@
-package base;
+package com.proxy.server;
 
+import base.AbstractConnection;
+import base.AbstractConnectionStream;
+import base.SocketAddressEntry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

@@ -21,8 +21,8 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class HttpConnectionStream extends AbstractConnectionStream {
 
-    public HttpConnectionStream(Client2ProxyConnection c2PConnection) {
-        super(c2PConnection);
+    public HttpConnectionStream(Client2ProxyConnection c2PConnection, ChannelHandlerContext context) {
+        super(c2PConnection,context);
         initStream();
     }
 
@@ -104,16 +104,26 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                         return byteBuf;
                     }
                 })
-                // 将代理服务器返回的消息进行处理 并将处理后得到的原始数据发送给客户端 也就是说这一步应该是由p2s的doRead方法调用
-                // 暂时假定p2s调用该方法时已经将报文处理完毕
+                // 将消息发送给代理服务器 这一步应由c2p调用
                 .addStep(new ConnectionStep() {
                     @Override
                     public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
-                        ByteBuf buf = (ByteBuf)msg;
+                        if (p2SConnection != null) {
+                            ByteBuf encrypted = ClientContext.crypto.encrypt((ByteBuf)msg);
+                            p2SConnection.writeData(encrypted);
+                        }
+                        return null;
+                    }
+                })
+                // 将代理服务器返回的消息进行处理 并将处理后得到的原始数据发送给客户端 也就是说这一步应该是由p2s的doRead方法调用
+                .addStep(new ConnectionStep() {
+                    @Override
+                    public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                        ByteBuf decrypted = ClientContext.crypto.decrypt((ByteBuf)msg);
                         boolean result = false;
                         int times = 0;
                         while (!result && times < 3) {
-                            result = c2PConnection.writeData(buf).syncUninterruptibly().isSuccess();
+                            result = c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
                             times++;
                         }
                         return result;
@@ -124,4 +134,3 @@ public class HttpConnectionStream extends AbstractConnectionStream {
 
 }
 
-}

@@ -28,8 +28,6 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
 
     protected static Map<Integer/*用户id*/, byte[]/*iv*/> idIvMap = new ConcurrentHashMap<>();
 
-    protected static final int REQ_CODE_POS = Packets.MAGIC_LENGTH;
-
     public AbstractHandler() {
     }
 

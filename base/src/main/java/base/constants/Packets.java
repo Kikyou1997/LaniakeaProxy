@@ -7,20 +7,22 @@ package base.constants;
  */
 public interface Packets {
 
-    short MAGIC = 0x1234;
+    int FILED_ID_LENGTH = 4;
+    int FILED_HASH_LENGTH = 32;
+    int FILED_CODE_LENGTH = 1;
+    int FILED_LENGTH_LEN = 4;
+    int FILED_IPV_LENGTH = 1;
+    int FILED_IPV4_LENGTH = 4;
+    int FILED_IPV6_LENGTH = 16;
+    int FILED_CLOCK_LENGTH = 8;
+    int FILED_IV_LENGTH = 16;
+    int FILED_HOST_LENGTH = 2;
 
-    int ID_LENGTH = 4;
-    int HASH_LENGTH = 32;
-    int MAGIC_LENGTH = 2;
-    int CODE_LENGTH = 1;
-    int LENGTH_FILED_LENGTH = 4;
-    int IPV_LENGTH = 1;
-    int IPV4_LENGTH = 4;
-    int IPV6_LENGTH = 16;
-    int CLOCK_LENGTH = 8;
-    int IV_LENGTH = 16;
-    int HOST_LENGTH = 2;
-
+    int HEADERS_AUTH_REQ_LEN  = FILED_CODE_LENGTH + FILED_HASH_LENGTH;
+    int HEADERS_AUTH_RESP_LEN = FILED_CODE_LENGTH + FILED_ID_LENGTH + FILED_IV_LENGTH;
+    int HEADERS_DATA_REQ_LEN  = FILED_CODE_LENGTH + FILED_ID_LENGTH + FILED_LENGTH_LEN;
+    int HEADERS_DATA_RESP_LEN = FILED_CODE_LENGTH + FILED_LENGTH_LEN;
+    int HEADERS_CONNECT_REQ_LEN = FILED_CODE_LENGTH + FILED_ID_LENGTH;
     byte IPV4 = 0;
     byte IPV6 = 1;
 

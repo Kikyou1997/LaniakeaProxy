@@ -22,15 +22,7 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
         doRead(ctx, msg);
     }
 
-    /*
-     由于RequestProcessor 已经处理了认证请求和解密问题 这里得到的就是原文
-     该方法
-     成功返回true
-     */
-    protected abstract boolean buildConnection2Remote(SocketAddressEntry socketAddress);
-
-    protected abstract void doRead(ChannelHandlerContext ctx,ByteBuf msg);
-
+    protected abstract void doRead(ChannelHandlerContext ctx,ByteBuf msg) throws Exception;
 
     public abstract ChannelFuture writeData(ByteBuf data);
 

@@ -1,7 +1,5 @@
 package base.interfaces;
 
-import base.constants.Packets;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
@@ -11,9 +9,4 @@ import io.netty.channel.ChannelHandlerContext;
 public interface Handler<R> {
 
     R handle(Object msg, ChannelHandlerContext ctx) throws Exception;
-
-    default boolean isProxyMessage(ByteBuf buf) {
-        buf.readerIndex(0);
-        return buf.readShort() == Packets.MAGIC;
-    }
 }

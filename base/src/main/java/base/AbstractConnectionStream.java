@@ -13,12 +13,14 @@ import java.util.Queue;
  */
 public abstract class AbstractConnectionStream {
 
-    protected Client2ProxyConnection c2PConnection;
-    protected Proxy2ServerConnection p2SConnection;
+    protected AbstractConnection c2PConnection;
+    protected AbstractConnection p2SConnection;
     protected Queue<ConnectionStep> steps = new LinkedList<>();
+    protected ChannelHandlerContext context;
 
-    public AbstractConnectionStream(Client2ProxyConnection c2PConnection) {
+    public AbstractConnectionStream(AbstractConnection c2PConnection, ChannelHandlerContext context) {
         this.c2PConnection = c2PConnection;
+        this.context = context;
         initStream();
     }
 
@@ -29,7 +31,7 @@ public abstract class AbstractConnectionStream {
 
     protected abstract void initStream();
 
-    protected static abstract class ConnectionStep implements Handler<Object> {
+    public static abstract class ConnectionStep implements Handler<Object> {
         protected Object lastResult = null;
 
         public void setLastResult(Object lastResult) {
@@ -37,9 +39,20 @@ public abstract class AbstractConnectionStream {
         }
     }
 
-    protected void then(ByteBuf buf, ChannelHandlerContext context) throws Exception{
+    public AbstractConnectionStream then(ByteBuf buf) throws Exception{
         ConnectionStep step = steps.poll();
         step.handle(buf, context);
+        return this;
+    }
+
+    public AbstractConnectionStream handle(ByteBuf buf) throws Exception{
+        ConnectionStep step = steps.peek();
+        step.handle(buf, context);
+        return this;
+    }
+
+    public ConnectionStep currentStep() {
+        return steps.poll();
     }
 
 }

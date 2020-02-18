@@ -13,9 +13,8 @@ import java.util.List;
  * @author kikyou
  * Created at 2020/2/14
  */
-public class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> {
+public abstract class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> {
 
-    private static int BASIC_HEADER_LENGTH = Packets.MAGIC_LENGTH + Packets.CODE_LENGTH + Packets.LENGTH_FILED_LENGTH;
 
     protected int id;
 
@@ -23,15 +22,8 @@ public class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> {
         this.id = id;
     }
 
-    @Override
-    protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        out.add(
-                ctx.alloc()
-                        .buffer(Packets.MAGIC_LENGTH)
-                        .writeShort(Packets.MAGIC));
-    }
-
     public static class RequestHeadersPrepender extends HeadersPrepender {
+
 
         public RequestHeadersPrepender(int id) {
             super(id);
@@ -39,11 +31,11 @@ public class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-            int length = msg.readableBytes() + BASIC_HEADER_LENGTH + Packets.ID_LENGTH;
-            super.encode(ctx, msg, out);
-            out.add(ctx.alloc().buffer(Packets.CODE_LENGTH).writeByte(RequestCode.DATA_TRANS_REQ));
-            out.add(ctx.alloc().buffer(Packets.LENGTH_FILED_LENGTH).writeInt(length));
-            out.add(ctx.alloc().buffer(Packets.ID_LENGTH).writeInt(id));
+            int headerLength = Packets.HEADERS_DATA_REQ_LEN;
+            int length = msg.readableBytes() +headerLength;
+            out.add(ctx.alloc().buffer(Packets.FILED_CODE_LENGTH).writeByte(RequestCode.DATA_TRANS_REQ));
+            out.add(ctx.alloc().buffer(Packets.FILED_LENGTH_LEN).writeInt(length));
+            out.add(ctx.alloc().buffer(Packets.FILED_ID_LENGTH).writeInt(id));
 
         }
     }
@@ -56,10 +48,9 @@ public class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-            int length = msg.readableBytes() + BASIC_HEADER_LENGTH;
-            super.encode(ctx, msg, out);
-            out.add(ctx.alloc().buffer(Packets.CODE_LENGTH).writeByte(ResponseCode.DATA_TRANS_RESP));
-            out.add(ctx.alloc().buffer(Packets.LENGTH_FILED_LENGTH).writeInt(length));
+            int length = msg.readableBytes() + Packets.HEADERS_DATA_RESP_LEN;
+            out.add(ctx.alloc().buffer(Packets.FILED_CODE_LENGTH).writeByte(ResponseCode.DATA_TRANS_RESP));
+            out.add(ctx.alloc().buffer(Packets.FILED_LENGTH_LEN).writeInt(length));
         }
     }
 

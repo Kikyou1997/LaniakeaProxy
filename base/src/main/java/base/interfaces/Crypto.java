@@ -8,10 +8,6 @@ import io.netty.buffer.ByteBuf;
  */
 public interface Crypto extends Handler<ByteBuf> {
 
-    /*
-    * 一字节请求码 4字节长度字段
-    */
-    int CRYPTO_INDEX = 5;
 
     ByteBuf encrypt(ByteBuf raw) throws Exception;
 

@@ -26,8 +26,6 @@ public class ProxyClient extends AbstractProxy {
 
     private static final String LOCALHOST = "127.0.0.1";
 
-    private int id = -1;
-    private byte[] iv = new byte[Packets.IV_LENGTH];
 
     @Override
     public void start() {
@@ -40,9 +38,11 @@ public class ProxyClient extends AbstractProxy {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
                 ch.pipeline()
-                        .addLast(new CryptoImpl(id, iv))
-                        .addLast(new HeadersPrepender.RequestHeadersPrepender(id))
-                        .addLast(new Client2ProxyConnection());
+                        .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
+                        .addLast(new Client2ProxyConnection())
+                        .addLast(new CryptoImpl(ClientContext.id, ClientContext.iv))
+                        .addLast();
+
             }
         });
     }
@@ -54,7 +54,7 @@ public class ProxyClient extends AbstractProxy {
         b.handler(new SimpleChannelInboundHandler<ByteBuf>() {
             @Override
             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-                msg.readerIndex(Packets.MAGIC_LENGTH);
+                msg.readerIndex(Packets.FILED_MAGIC_LENGTH);
                 byte code = msg.readByte();
                 switch (code) {
                     case ResponseCode
@@ -63,15 +63,17 @@ public class ProxyClient extends AbstractProxy {
                         ctx.channel().writeAndFlush(generateAuthRequest(clockTime));
                         break;
                     case ResponseCode.AUTH_RESP:
-                        id = msg.readInt();
+                        ClientContext.id = msg.readInt();
+                        byte[] iv = new byte[Packets.IV_LENGTH];
                         msg.readBytes(iv);
+                        ClientContext.iv = iv;
                 }
             }
         });
         ChannelFuture future = b.connect(ip, port).syncUninterruptibly();
         future.channel().writeAndFlush(generateClockRequest());
         int count = 0;
-        while (id == -1 && count < 10) {
+        while (ClientContext.id == -1 && count < 10) {
             try {
                 Thread.sleep(30);
             } catch (InterruptedException e) {
@@ -79,20 +81,20 @@ public class ProxyClient extends AbstractProxy {
             }
             count++;
         }
-        if (id == -1) {
+        if (ClientContext.id == -1) {
             throw new Exceptions.AuthenticationFailedException("Get id failed");
         }
     }
 
 
     private ByteBuf generateClockRequest() {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.MAGIC_LENGTH + Packets.CODE_LENGTH);
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_MAGIC_LENGTH + Packets.FILED_CODE_LENGTH);
         buf.writeShort(Packets.MAGIC).writeByte(RequestCode.GET_CLOCK_REQ);
         return buf;
     }
 
     private ByteBuf generateAuthRequest(long clockTime) {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.MAGIC_LENGTH + Packets.CODE_LENGTH + Packets.HASH_LENGTH);
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_MAGIC_LENGTH + Packets.FILED_CODE_LENGTH + Packets.FILED_HASH_LENGTH);
         buf.writeShort(Packets.MAGIC).writeShort(RequestCode.AUTH_REQ).writeBytes(
                 CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))
         );

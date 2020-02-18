@@ -1,6 +1,7 @@
 package base;
 
 import base.constants.Packets;
+import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,8 +14,7 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
 
-    private static final int ID_POS = REQ_CODE_POS + Packets.CODE_LENGTH;
-    private static final int TEXT_POS = ID_POS + Packets.ID_LENGTH;
+    private static final int ID_POS = Packets.FILED_CODE_LENGTH;
 
     private byte[] getIv(int id) {
         return idIvMap.get(id);
@@ -38,7 +38,6 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
         String name = super.getUsernameById(raw);
         byte[] secrets = Config.getUserSecretKeyBin(name);
         byte[] iv = getIv(getId(raw));
-        raw.readerIndex(Crypto.CRYPTO_INDEX);
         byte[] encrypted = new byte[raw.readableBytes()];
         raw.readBytes(encrypted);
         encrypted = CryptoUtil.encrypt(encrypted, secrets, iv);
@@ -47,12 +46,11 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
         return raw;
     }
 
-    @Override
-    public ByteBuf decrypt(ByteBuf cypherText) throws Exception {
+    public ByteBuf decrypt(ByteBuf cypherText, int textPosition) throws Exception {
         String name = super.getUsernameById(cypherText);
         byte[] secrets = Config.getUserSecretKeyBin(name);
         byte[] iv = getIv(getId(cypherText));
-        cypherText.readerIndex(TEXT_POS);
+        cypherText.readerIndex(textPosition);
         byte[] raw = new byte[cypherText.readableBytes()];
         cypherText.readBytes(raw);
         raw = CryptoUtil.decrypt(raw, secrets, iv);
@@ -61,23 +59,18 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
         return cypherText;
     }
 
+    @Override
+    public ByteBuf decrypt(ByteBuf cypherText) throws Exception {
+        cypherText.readerIndex(0);
+        byte code = cypherText.readByte();
+        decrypt(cypherText, code == RequestCode.CONNECT ? Packets.HEADERS_CONNECT_REQ_LEN : Packets.HEADERS_DATA_REQ_LEN);
+        return cypherText;
+    }
 
     @Override
     public ByteBuf handle(Object msg, ChannelHandlerContext ctx) throws Exception {
         super.context = ctx;
         ByteBuf buf = (ByteBuf) msg;
-        if (isProxyMessage(buf)) {
-            if (AbstractProxy.CLIENT_MODE) {
-                return decrypt(buf);
-            } else {
-                return encrypt(buf);
-            }
-        } else {
-            if (AbstractProxy.CLIENT_MODE) {
-                return encrypt(buf);
-            } else {
-                return decrypt(buf);
-            }
-        }
+        return decrypt(buf);
     }
 }

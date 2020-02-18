@@ -24,10 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Map<Byte, Handler> byteHandlerMap = new ConcurrentHashMap<>();
-    // 2 + 1 + 4 + 4 = 11
-    private static final int HEADER_LENGTH = Packets.MAGIC_LENGTH + Packets.CODE_LENGTH + Packets.ID_LENGTH + Packets.LENGTH_FILED_LENGTH;
-    // 对于CONNECT请求
-    private static final int DEST_POS = Packets.MAGIC_LENGTH + Packets.CODE_LENGTH;
+    private static final int HEADER_LENGTH =  Packets.FILED_CODE_LENGTH + Packets.FILED_ID_LENGTH + Packets.FILED_LENGTH_LEN;
 
     {
         byteHandlerMap.put(AUTH_REQ, new AuthImpl());
@@ -54,8 +51,9 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 handler.handle(msg, ctx);
                 break;
             case CONNECT:
-                SocketAddressEntry entry = getHostFromBuf(msg);
-                // to be continued
+                msg.readerIndex(Packets.FILED_CODE_LENGTH);
+                handler = byteHandlerMap.get(DATA_TRANS_REQ);
+                handler.handle(msg, ctx);
                 break;
         }
         removeRedundantHeader(msg);
@@ -63,7 +61,6 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     public static byte getRequestCode(ByteBuf msg) {
-        msg.readerIndex(Packets.MAGIC_LENGTH);
         return msg.readByte();
     }
 
@@ -76,9 +73,8 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
-        buf.readerIndex(DEST_POS);
         short length = buf.readShort();
-        String host =  buf.readCharSequence(length, StandardCharsets.UTF_8).toString();
+        String host =  buf.readCharSequence(length, StandardCharsets.US_ASCII).toString();
         short port = buf.readShort();
         return new SocketAddressEntry(host, port);
     }
