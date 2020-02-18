@@ -38,7 +38,7 @@ public class Client2ProxyConnection extends AbstractConnection {
                     .then(msg);
         } else {
             if (currentStep == null) {
-                currentStep = connectionStream.currentStep();
+                currentStep = connectionStream.nextStep();
             }
             currentStep.handle(msg, ctx);
         }

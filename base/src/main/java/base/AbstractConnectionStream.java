@@ -51,8 +51,12 @@ public abstract class AbstractConnectionStream {
         return this;
     }
 
-    public ConnectionStep currentStep() {
+    public ConnectionStep nextStep() {
         return steps.poll();
+    }
+
+    public ConnectionStep peek() {
+        return steps.peek();
     }
 
     public void close() {

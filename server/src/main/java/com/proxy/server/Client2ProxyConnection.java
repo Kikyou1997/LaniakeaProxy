@@ -1,7 +1,6 @@
 package com.proxy.server;
 
 import base.AbstractConnection;
-import base.SocketAddressEntry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -26,9 +25,16 @@ public class Client2ProxyConnection extends AbstractConnection {
             connectionStream = new HttpConnectionStream(this, ctx);
         }
         if (currentStep == null) {
-            currentStep = connectionStream.currentStep();
+            try {
+                connectionStream.then(msg);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+            currentStep = connectionStream.nextStep();
+        } else {
+            currentStep.handle(msg, ctx);
         }
-        currentStep.handle(msg, ctx);
     }
 
 

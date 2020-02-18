@@ -31,7 +31,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
         if (currentStep == null) {
-            currentStep = connectionStream.currentStep();
+            currentStep = connectionStream.nextStep();
         }
         currentStep.handle(msg, ctx);
     }

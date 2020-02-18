@@ -43,7 +43,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                 // 和真正的服务器建立tcp连接
                 addStep(new ConnectionStep() {
 
-                    private ConnectionStep dataTransferStep = HttpConnectionStream.this.currentStep();
+                    private ConnectionStep dataTransferStep = HttpConnectionStream.this.peek();
 
                     @Override
                     public Object handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
