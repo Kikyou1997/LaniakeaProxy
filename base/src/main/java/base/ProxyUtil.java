@@ -161,25 +161,6 @@ public class ProxyUtil {
         return byteBuf;
     }
 
-    public static ByteBuf[] splitAndEnc(ByteBuf msg, byte[] id) throws Exception {
-        ByteBuf byteBuf[] = splitChunkWith256Bytes(msg);
-        for (int i = 0; i < byteBuf.length; i++) {
-            byteBuf[i] = (ByteBuf) CryptoUtil.encrypt(byteBuf[i], id);
-        }
-        log.debug("The last one " + byteBuf[byteBuf.length - 1].readableBytes());
-        return byteBuf;
-    }
-
-    public static ByteBuf removeTailId(ByteBuf msg) {
-        /*
-        byte[] src = new byte[8];
-        msg.getBytes(msg.readerIndex() - 8, src);
-        for (int i = 0; i < 8; i++) {
-            if (src[i] != ControlCentre.id[i]) return msg;
-        }*/
-        return msg.readBytes(msg.readableBytes() - 8);
-    }
-
     public static ByteBuf rmHeadId(ByteBuf msg) {
         ByteBuf byteBuf = Unpooled.buffer(msg.readableBytes() - 8);
         msg.getBytes(8, byteBuf);

@@ -117,14 +117,11 @@ public class CryptoUtil {
         return new IvParameterSpec(random.generateSeed(16)).getIV();
     }
 
-    public static Object encrypt(ByteBuf data, byte[] id, byte[] iv, byte[] secretKey) throws Exception {
+    public static ByteBuf encrypt(ByteBuf data, byte[] iv, byte[] secretKey) throws Exception {
         byte[] re = encrypt(ProxyUtil.getBytesFromByteBuf(data), secretKey, iv);
         return ProxyUtil.getByteBufFromBytes(re);
     }
 
-    public static Object encrypt(Object data, byte[] id) throws Exception {
-        return encrypt(data, id);
-    }
 
     public static Object decrypt(ByteBuf data, byte[] secretKey, byte[] iv) throws Exception {
         byte[] re = decrypt(ProxyUtil.getBytesFromByteBuf(data), secretKey, iv);

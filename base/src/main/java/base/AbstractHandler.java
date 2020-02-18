@@ -33,7 +33,6 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
 
     /*
      * 该构造器方法用于客户端
-     *
      */
     public AbstractHandler(int clientId, byte[] iv) {
         this.clientId = clientId;
