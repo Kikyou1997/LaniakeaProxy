@@ -9,7 +9,7 @@ import io.netty.buffer.ByteBuf;
 public interface Crypto extends Handler<ByteBuf> {
 
 
-    ByteBuf encrypt(ByteBuf raw) throws Exception;
+    ByteBuf encrypt(ByteBuf raw) throws RuntimeException;
 
-    ByteBuf decrypt(ByteBuf cypherText) throws Exception;
+    ByteBuf decrypt(ByteBuf cypherText) throws RuntimeException;
 }

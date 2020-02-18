@@ -64,7 +64,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
             ch.pipeline()
                     .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
                     //  返回的包不包括id字段
-                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FILED_CODE_LENGTH, 4));
+                    .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FIELD_CODE_LENGTH, 4));
 
         }
     }

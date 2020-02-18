@@ -19,7 +19,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
     private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
     private ThreadLocal<String> name = new ThreadLocal<>();
 
-    private static final int HASH_POS = REQ_CODE_POS + Packets.FILED_CODE_LENGTH;
+    private static final int HASH_POS = Packets.FIELD_CODE_LENGTH;
 
     @Override
     public boolean isValid(Object msg) {
@@ -40,7 +40,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
     }
 
     @Override
-    public Void handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+    public Void handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
         super.context = ctx;
         if (msg instanceof ByteBuf) {
             if (isValid(msg)) {

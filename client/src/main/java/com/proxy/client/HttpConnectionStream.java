@@ -30,7 +30,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                 // 检查是否是Http Connect请求
                 .addStep(new ConnectionStep() {
                     @Override
-                    public Boolean handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                    public Boolean handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
                         ByteBuf buf = (ByteBuf) msg;
                         buf.readerIndex(0);
                         Boolean result = checkHttpHeader(buf);
@@ -48,7 +48,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                 // 同服务器建立连接并根据是否是Connect请求以及连接建立是否成功 回复ConnectionEstablished
                 .addStep(new ConnectionStep() {
                     @Override
-                    public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                    public Object handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
                         Boolean last = (Boolean) lastResult;
                         ByteBuf buf = (ByteBuf) msg;
                         SocketAddressEntry socketAddress = getSocketAddressFromBuf(buf, last);
@@ -106,7 +106,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                 // 将消息发送给代理服务器 这一步应由c2p调用
                 .addStep(new ConnectionStep() {
                     @Override
-                    public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                    public Object handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
                         if (p2SConnection != null) {
                             ByteBuf encrypted = ClientContext.crypto.encrypt((ByteBuf)msg);
                             p2SConnection.writeData(encrypted);
@@ -117,7 +117,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                 // 将代理服务器返回的消息进行处理 并将处理后得到的原始数据发送给客户端 也就是说这一步应该是由p2s的doRead方法调用
                 .addStep(new ConnectionStep() {
                     @Override
-                    public Object handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+                    public Object handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
                         ByteBuf decrypted = ClientContext.crypto.decrypt((ByteBuf)msg);
                         boolean result = false;
                         int times = 0;

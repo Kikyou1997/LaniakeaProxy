@@ -19,8 +19,8 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     private SocketAddressEntry socketAddress;
     private Channel channel;
-    private AbstractConnectionStream connectionStream;
-    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
+
+    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) {
         this.socketAddress = entry;
         this.connectionStream = stream;
         if (!buildConnection2Remote(entry)) {
@@ -30,7 +30,10 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
-
+        if (currentStep == null) {
+            currentStep = connectionStream.currentStep();
+        }
+        currentStep.handle(msg, ctx);
     }
 
 
@@ -39,7 +42,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
         return remoteServer.writeAndFlush(data);
     }
 
-    @Override
     protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
         short port = socketAddress.getPort();

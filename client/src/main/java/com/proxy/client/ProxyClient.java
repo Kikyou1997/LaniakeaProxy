@@ -30,11 +30,11 @@ public class ProxyClient extends AbstractProxy {
     @Override
     public void start() {
         getIdFromRemoteServer(Config.config.getServerAddress(), Config.config.getServerPort());
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.childOption(ChannelOption.TCP_NODELAY, true);
-        bootstrap.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
+        ServerBootstrap server = new ServerBootstrap();
+        server.childOption(ChannelOption.TCP_NODELAY, true);
+        server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
                 Config.config.getBindPort());
-        bootstrap.childHandler(new Client2ProxyConnection());
+        server.childHandler(new Client2ProxyConnection());
     }
 
     private void getIdFromRemoteServer(String ip, int port) {
@@ -53,7 +53,7 @@ public class ProxyClient extends AbstractProxy {
                         break;
                     case ResponseCode.AUTH_RESP:
                         int id = msg.readInt();
-                        byte[] iv = new byte[Packets.FILED_IV_LENGTH];
+                        byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
                         msg.readBytes(iv);
                         ClientContext.initContext(id, iv);
                 }
@@ -76,13 +76,13 @@ public class ProxyClient extends AbstractProxy {
     }
 
     private ByteBuf generateClockRequest() {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_CODE_LENGTH);
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH);
         buf.writeByte(RequestCode.GET_CLOCK_REQ);
         return buf;
     }
 
     private ByteBuf generateAuthRequest(long clockTime) {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FILED_CODE_LENGTH + Packets.FILED_HASH_LENGTH);
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
         buf.writeShort(RequestCode.AUTH_REQ).writeBytes(
                 CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))
         );

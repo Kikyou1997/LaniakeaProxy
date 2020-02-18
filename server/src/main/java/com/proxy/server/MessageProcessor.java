@@ -1,7 +1,10 @@
-package base;
+package com.proxy.server;
 
 import static base.constants.RequestCode.*;
 
+import base.AuthImpl;
+import base.CryptoImpl;
+import base.MessageGenerator;
 import base.constants.Packets;
 import base.interfaces.Handler;
 import io.netty.buffer.ByteBuf;
@@ -10,7 +13,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,13 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     private Map<Byte, Handler> byteHandlerMap = new ConcurrentHashMap<>();
-    private static final int HEADER_LENGTH =  Packets.FILED_CODE_LENGTH + Packets.FILED_ID_LENGTH + Packets.FILED_LENGTH_LEN;
+    private static final int HEADER_LENGTH =  Packets.FIELD_CODE_LENGTH + Packets.FIELD_ID_LENGTH + Packets.FIELD_LENGTH_LEN;
 
     {
         byteHandlerMap.put(AUTH_REQ, new AuthImpl());
         byteHandlerMap.put(DATA_TRANS_REQ, new CryptoImpl());
     }
-
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
@@ -46,15 +47,6 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 handler = byteHandlerMap.get(AUTH_REQ);
                 handler.handle(msg, ctx);
                 return;
-            case DATA_TRANS_REQ:
-                handler = byteHandlerMap.get(DATA_TRANS_REQ);
-                handler.handle(msg, ctx);
-                break;
-            case CONNECT:
-                msg.readerIndex(Packets.FILED_CODE_LENGTH);
-                handler = byteHandlerMap.get(DATA_TRANS_REQ);
-                handler.handle(msg, ctx);
-                break;
         }
         removeRedundantHeader(msg);
         ctx.fireChannelRead(msg);
@@ -70,13 +62,6 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
         buf.readBytes(msg);
         buf.clear();
         buf.writeBytes(msg);
-    }
-
-    private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
-        short length = buf.readShort();
-        String host =  buf.readCharSequence(length, StandardCharsets.US_ASCII).toString();
-        short port = buf.readShort();
-        return new SocketAddressEntry(host, port);
     }
 
 }

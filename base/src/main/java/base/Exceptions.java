@@ -12,7 +12,7 @@ public class Exceptions {
         }
     }
 
-    public static class ConnectionTimeoutException extends Exception {
+    public static class ConnectionTimeoutException extends RuntimeException {
         public ConnectionTimeoutException(SocketAddressEntry entry) {
             super("Connect to " + entry.toString() + " timeout");
         }

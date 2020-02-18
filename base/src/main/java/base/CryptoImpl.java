@@ -14,7 +14,7 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
 
-    private static final int ID_POS = Packets.FILED_CODE_LENGTH;
+    private static final int ID_POS = Packets.FIELD_CODE_LENGTH;
 
     private byte[] getIv(int id) {
         return idIvMap.get(id);
@@ -28,33 +28,46 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
     }
 
     @Override
-    public ByteBuf encrypt(ByteBuf raw) throws Exception {
+    public ByteBuf encrypt(ByteBuf raw) throws RuntimeException {
         String name = super.getUsernameById(raw);
         byte[] secrets = Config.getUserSecretKeyBin(name);
         byte[] iv = getIv(getId(raw));
         byte[] encrypted = new byte[raw.readableBytes()];
         raw.readBytes(encrypted);
-        encrypted = CryptoUtil.encrypt(encrypted, secrets, iv);
+        try {
+            encrypted = CryptoUtil.encrypt(encrypted, secrets, iv);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
         raw.clear();
         raw.writeBytes(encrypted);
         return raw;
     }
 
-    public ByteBuf decrypt(ByteBuf cypherText, int textPosition) throws Exception {
+    /*
+    *返回解密完的自定义头的原数据
+    */
+    public ByteBuf decrypt(ByteBuf cypherText, int textPosition) {
         String name = super.getUsernameById(cypherText);
         byte[] secrets = Config.getUserSecretKeyBin(name);
         byte[] iv = getIv(getId(cypherText));
         cypherText.readerIndex(textPosition);
         byte[] raw = new byte[cypherText.readableBytes()];
         cypherText.readBytes(raw);
-        raw = CryptoUtil.decrypt(raw, secrets, iv);
+        try {
+            raw = CryptoUtil.decrypt(raw, secrets, iv);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
         cypherText.clear();
         cypherText.writeBytes(raw);
         return cypherText;
     }
 
     @Override
-    public ByteBuf decrypt(ByteBuf cypherText) throws Exception {
+    public ByteBuf decrypt(ByteBuf cypherText) throws RuntimeException {
         cypherText.readerIndex(0);
         byte code = cypherText.readByte();
         decrypt(cypherText, code == RequestCode.CONNECT ? Packets.HEADERS_CONNECT_REQ_LEN : Packets.HEADERS_DATA_REQ_LEN);
@@ -62,7 +75,7 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
     }
 
     @Override
-    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) throws Exception {
+    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
         super.context = ctx;
         ByteBuf buf = (ByteBuf) msg;
         return decrypt(buf);

@@ -32,21 +32,25 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
     }
 
     /*
-    * 该构造器方法用于客户端
-    *
-    */
+     * 该构造器方法用于客户端
+     *
+     */
     public AbstractHandler(int clientId, byte[] iv) {
         this.clientId = clientId;
         idNameMap.putIfAbsent(clientId, Config.config.getUsername());
         idIvMap.putIfAbsent(clientId, iv);
     }
 
-    protected void sendResponse(ByteBuf response) throws InterruptedException {
+    protected void sendResponse(ByteBuf response) {
         boolean succeed = false;
         int count = 0;
         while (!succeed && count < retryTimes) {
-            ChannelFuture future = context.writeAndFlush(response).sync();
-            succeed = future.isSuccess();
+            try {
+                ChannelFuture future = context.writeAndFlush(response).sync();
+                succeed = future.isSuccess();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             count++;
         }
     }
@@ -61,7 +65,7 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
         if (clientId != -1) {
             return clientId;
         } else {
-            buf.readerIndex(Packets.FILED_CODE_LENGTH);
+            buf.readerIndex(Packets.FIELD_CODE_LENGTH);
             return buf.readInt();
         }
     }
