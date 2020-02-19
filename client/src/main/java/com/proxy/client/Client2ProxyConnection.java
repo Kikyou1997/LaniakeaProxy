@@ -31,6 +31,9 @@ public class Client2ProxyConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+        if (clientChannel == null){
+            clientChannel = ctx.channel();
+        }
         if (connectionStream == null) {
             connectionStream = new HttpConnectionStream(this, ctx);
             connectionStream

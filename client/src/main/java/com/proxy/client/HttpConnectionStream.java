@@ -20,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class HttpConnectionStream extends AbstractConnectionStream {
 
+    private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
+
     public HttpConnectionStream(Client2ProxyConnection c2PConnection, ChannelHandlerContext context) {
         super(c2PConnection,context);
         initStream();
@@ -54,7 +56,7 @@ public class HttpConnectionStream extends AbstractConnectionStream {
                         SocketAddressEntry socketAddress = getSocketAddressFromBuf(buf, last);
                         boolean connectRequestSent = false;
                         try {
-                            p2SConnection = new Proxy2ServerConnection(socketAddress, HttpConnectionStream.this);
+                            p2SConnection = new Proxy2ServerConnection(proxyServerAddressEntry, HttpConnectionStream.this);
                             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
                             ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
                                     Converter.convertShort2ByteArray((short) hostBytes.length), hostBytes, Converter.convertShort2ByteArray(socketAddress.getPort()));

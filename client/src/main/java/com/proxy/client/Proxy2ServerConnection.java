@@ -5,17 +5,19 @@ import base.constants.Packets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author kikyou
  * @date 2020/1/29
  */
+@Slf4j
 public class Proxy2ServerConnection extends AbstractConnection {
 
     private SocketAddressEntry socketAddress;
-    private Channel channel;
 
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
         this.socketAddress = entry;
@@ -43,14 +45,18 @@ public class Proxy2ServerConnection extends AbstractConnection {
         String host = socketAddress.getHost();
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(super.eventLoops);
+        bootstrap.channel(NioSocketChannel.class);
+        bootstrap.group(new NioEventLoopGroup(1));
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
-        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
+        bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         bootstrap.handler(new P2SChannelInitializer());
-        ChannelFuture future = bootstrap.connect(host, port);
-        future.syncUninterruptibly();
-        this.channel = future.channel();
-        return future.isSuccess();
+        ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
+        this.remoteServer = future.channel();
+        if (!future.isSuccess()) {
+            log.error("Connect 2 remote proxy server " + socketAddress.toString() + " failed", future.cause());
+            return false;
+        }
+        return true;
     }
 
     @Override

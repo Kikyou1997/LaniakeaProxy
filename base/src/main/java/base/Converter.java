@@ -33,8 +33,8 @@ public class Converter {
         return ans;
     }
 
-    public static byte[] convertInteger2ByteLittleEnding(int val) {
-        byte[] ans = new byte[8];
+    public static byte[] convertInteger2ByteLBigEnding(int val) {
+        byte[] ans = new byte[4];
         byte helper = -1;
         for (int i = 3; i >= 0; i--) {
             ans[i] = (byte) (val & helper);
@@ -43,8 +43,8 @@ public class Converter {
         return ans;
     }
 
-    public static byte[] convertInteger2ByteBigEnding(int val) {
-        byte[] ans = new byte[8];
+    public static byte[] convertInteger2ByteLittleEnding(int val) {
+        byte[] ans = new byte[4];
         int count = 24;
         byte helper = -1;
         for (int i = 3; i >= 0; i--) {
@@ -64,6 +64,8 @@ public class Converter {
 
 
     public static void main(String[] args) throws Exception {
-
+        for (byte b : convertInteger2ByteLBigEnding(255)){
+            System.out.printf("%d\t", b);
+        }
     }
 }

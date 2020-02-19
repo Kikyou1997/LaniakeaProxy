@@ -3,9 +3,9 @@ package base;
 import base.constants.Packets;
 import base.constants.ResponseCode;
 import base.interfaces.Auth;
-import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -15,9 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author kikyou
  * Created at 2020/1/31
  */
+@Slf4j
 public class AuthImpl extends AbstractHandler<Void> implements Auth {
 
-    private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
+    private static AtomicInteger ids = new AtomicInteger(0);
     private ThreadLocal<String> name = new ThreadLocal<>();
     private static final int HASH_POS = Packets.FIELD_CODE_LENGTH;
 
@@ -51,6 +52,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
                 idTimeMap.put(id, System.currentTimeMillis());
                 idNameMap.put(id, name.get());
                 byte[] iv = CryptoUtil.ivGenerator();
+                log.info("Generated id: {} Iv: {}", id, iv);
                 ByteBuf resp = createAuthResponse(id, iv);
                 sendResponse(resp);
                 idIvMap.put(id, iv);
@@ -62,7 +64,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
     }
 
     private ByteBuf createAuthResponse(int id, byte[] iv) {
-        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), iv);
+        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteLBigEnding(id), iv);
     }
 
 

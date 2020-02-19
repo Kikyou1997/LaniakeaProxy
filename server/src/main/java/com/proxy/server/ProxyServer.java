@@ -22,7 +22,6 @@ public class ProxyServer extends AbstractProxy {
     @Override
     public void start() {
         Config.loadSettings(false);
-        System.out.println(CryptoUtil.encodeFromBytes(CryptoUtil.initKey()));
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);

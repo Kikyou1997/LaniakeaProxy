@@ -61,8 +61,8 @@ public class ProxyClient extends AbstractProxy {
                     case ResponseCode.AUTH_RESP:
                         int id = msg.readInt();
                         byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
-                        log.info(" Id received : {} Iv received: {}", id, iv);
                         msg.readBytes(iv);
+                        log.info(" Id received : {} Iv received: {}", id, iv);
                         ClientContext.initContext(id, iv);
                 }
             }
@@ -78,6 +78,14 @@ public class ProxyClient extends AbstractProxy {
             }
         }
         channel.writeAndFlush(generateAuthRequest(time));
+        while (ClientContext.iv == null) {
+            try {
+                Thread.currentThread().join(50);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        log.info("Client Context initialized");
 
     }
 

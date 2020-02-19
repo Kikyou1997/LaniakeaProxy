@@ -1,5 +1,6 @@
 package base;
 
+import base.interfaces.Crypto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -33,6 +34,7 @@ public class Config implements Serializable {
     private String secretKey;
     //服务端配置
     private List<User> users;
+    private transient byte[] secretKeyBin = null;
 
     @Data
     @AllArgsConstructor
@@ -66,8 +68,16 @@ public class Config implements Serializable {
         User u = getUserInfo(username);
         if (u != null) {
             return u.getSecretKeyBin();
+        } else {
+            return config.getSecretKeyBin();
         }
-        return null;
+    }
+
+    public byte[] getSecretKeyBin() {
+        if (this.secretKeyBin == null) {
+            this.secretKeyBin = CryptoUtil.decodeFromString(this.secretKey);
+        }
+        return secretKeyBin;
     }
 
     public static void loadSettings(boolean client) {
