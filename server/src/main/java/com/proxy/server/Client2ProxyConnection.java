@@ -41,14 +41,12 @@ public class Client2ProxyConnection extends AbstractConnection {
     }
 
     private void buildConnection2RealServer(ByteBuf msg) {
-        ByteBuf buf = msg;
-        buf.readerIndex(1);
-        this.id = buf.readInt();
-        buf.readerIndex(0);
-        byte code = buf.readByte();
+        msg.readerIndex(0);
+        byte code = msg.readByte();
+        this.id = msg.readInt();
         if (code == RequestCode.CONNECT) {
-            crypto.decrypt(buf);
-            SocketAddressEntry socketAddress = getHostFromBuf(buf);
+            crypto.decrypt(msg);
+            SocketAddressEntry socketAddress = getHostFromBuf(msg);
             super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
         }
     }

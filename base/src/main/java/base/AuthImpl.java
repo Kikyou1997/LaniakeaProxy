@@ -64,7 +64,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
     }
 
     private ByteBuf createAuthResponse(int id, byte[] iv) {
-        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteLBigEnding(id), iv);
+        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), iv);
     }
 
 

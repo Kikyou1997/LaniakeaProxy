@@ -69,4 +69,8 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         disconnect();
     }
+
+    public boolean isChannelActive() {
+        return channel.isActive();
+    }
 }

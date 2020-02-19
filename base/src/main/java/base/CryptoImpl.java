@@ -42,6 +42,8 @@ public class CryptoImpl extends AbstractHandler<ByteBuf> implements Crypto {
         }
         raw.clear();
         raw.writeBytes(encrypted);
+        raw.writerIndex(0);
+        raw.readerIndex(0);
         return raw;
     }
 
