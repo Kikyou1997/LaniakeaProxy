@@ -26,9 +26,9 @@ public class Clock {
         public void run() {
             while (true) {
                 try {
-                    Thread.sleep(1000 * 60);
                     Clock.currentTime = System.currentTimeMillis() >>> 16;
-                    currrentTimeBytesArrayRepresent = getTimeInBytes();
+                    currrentTimeBytesArrayRepresent = Converter.convertLong2ByteBigEnding(currentTime);
+                    Thread.sleep(1000 * 60);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

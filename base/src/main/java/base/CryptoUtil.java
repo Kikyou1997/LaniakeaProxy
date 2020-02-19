@@ -43,7 +43,6 @@ public class CryptoUtil {
 
     public  static byte[] getSHA256Hash(byte[] secretKey, byte[] salt) {
         MessageDigest digest = null;
-
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {

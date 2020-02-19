@@ -3,6 +3,7 @@ package base;
 import base.constants.Packets;
 import base.constants.ResponseCode;
 import base.interfaces.Auth;
+import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -36,6 +37,8 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
             return false;
         }
         byte[] validHash = CryptoUtil.getSHA256Hash(user.getSecretKey(), Clock.getTimeInBytes());
+        System.out.println(CryptoUtil.encodeFromBytes(validHash));
+        System.out.println(CryptoUtil.encodeFromBytes((receivedHash)));
         return Arrays.equals(receivedHash, validHash);
     }
 
