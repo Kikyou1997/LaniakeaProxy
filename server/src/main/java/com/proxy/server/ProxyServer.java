@@ -2,13 +2,14 @@ package com.proxy.server;
 
 import base.AbstractProxy;
 import base.Config;
-import base.constants.Packets;
+import base.CryptoUtil;
+import base.Platform;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.sctp.nio.NioSctpChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import static base.Config.config;
 
@@ -20,24 +21,28 @@ public class ProxyServer extends AbstractProxy {
 
     @Override
     public void start() {
+        Config.loadSettings(false);
+        System.out.println(CryptoUtil.encodeFromBytes(CryptoUtil.initKey()));
         ServerBootstrap server = new ServerBootstrap();
+        server.group(new NioEventLoopGroup(Platform.processorsNumber * 2));
+        server.channel(NioServerSocketChannel.class);
         server.childOption(ChannelOption.TCP_NODELAY, true);
-        server.bind(config.getServerAddress() == null ? "0.0.0.0" :
-                config.getServerAddress(), config.getServerPort());
-        server.childHandler(new ChannelInitializer<NioSctpChannel>() {
+        server.childOption(ChannelOption.SO_KEEPALIVE, true);
+        server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override
-            protected void initChannel(NioSctpChannel ch) throws Exception {
+            protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline()
                         .addLast(new MessageProcessor())
                         .addLast(new CustomizedLengthBasedDecoder())
                         .addLast(new Client2ProxyConnection());
             }
         });
-
+        server.bind(config.getServerAddress() == null ? "0.0.0.0" :
+                config.getServerAddress(), config.getServerPort()).syncUninterruptibly();
     }
 
     public static void main(String[] args) throws Exception {
-
+        new ProxyServer().start();
     }
 }

@@ -18,7 +18,6 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
 
     private static AtomicInteger ids = new AtomicInteger(Integer.MIN_VALUE);
     private ThreadLocal<String> name = new ThreadLocal<>();
-
     private static final int HASH_POS = Packets.FIELD_CODE_LENGTH;
 
     @Override
@@ -28,8 +27,9 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
         buf.readerIndex(HASH_POS);
         buf.readBytes(receivedHash);
         byte[] usernameBytes = new byte[buf.readableBytes()];
-        buf.readBytes(usernameBytes);
-        String username = new String(usernameBytes, StandardCharsets.UTF_8);
+        buf.readBytes(usernameBytes
+        );
+        String username = new String(usernameBytes, StandardCharsets.US_ASCII);
         name.set(username);
         Config.User user = Config.getUserInfo(username);
         if (user == null) {

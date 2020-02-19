@@ -3,6 +3,7 @@ package base;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,7 @@ public class Config implements Serializable {
     private Boolean statistic;
     // 客户端配置
     private String username;
+    // base64编码保存在本地
     private String secretKey;
     //服务端配置
     private List<User> users;
@@ -38,7 +40,7 @@ public class Config implements Serializable {
         private String username;
         /*BASE64编码*/
         private String secretKey;
-        private Long usedTraffics;
+        private transient Long usedTraffics;
         private transient byte[] secretKeyBin;
 
         public byte[] getSecretKeyBin() {
@@ -49,18 +51,6 @@ public class Config implements Serializable {
         }
     }
 
-    static {
-        // loadConfig File
-        if (AbstractProxy.CLIENT_MODE) {
-            config = IOUtil.getSettings(CLIENT_CONFIG_FILE_PATH);
-        } else {
-            config = IOUtil.getSettings(SERVER_CONFIG_FILE_PATH);
-        }
-    }
-
-    {
-        initUserInfoMap();
-    }
 
     private void initUserInfoMap() {
         for (User u : users) {
@@ -78,5 +68,15 @@ public class Config implements Serializable {
             return u.getSecretKeyBin();
         }
         return null;
+    }
+
+    public static void loadSettings(boolean client) {
+        if (!client) {
+            config = IOUtil.getSettings(SERVER_CONFIG_FILE_PATH);
+            config.initUserInfoMap();
+        } else {
+            config = IOUtil.getSettings(CLIENT_CONFIG_FILE_PATH);
+        }
+
     }
 }

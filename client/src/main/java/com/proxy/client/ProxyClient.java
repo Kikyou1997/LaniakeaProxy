@@ -10,8 +10,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author kikyou
@@ -21,20 +24,24 @@ import lombok.extern.slf4j.Slf4j;
 public class ProxyClient extends AbstractProxy {
 
     public static void main(String[] args) throws Exception {
-
+        new ProxyClient().start();
     }
 
     private static final String LOCALHOST = "127.0.0.1";
-
+    long time = -1;
 
     @Override
     public void start() {
+        Config.loadSettings(true);
         getIdFromRemoteServer(Config.config.getServerAddress(), Config.config.getServerPort());
         ServerBootstrap server = new ServerBootstrap();
+        server.group(new NioEventLoopGroup(Platform.processorsNumber * 2));
+        server.channel(NioServerSocketChannel.class);
+        server.childOption(ChannelOption.SO_KEEPALIVE, true);
         server.childOption(ChannelOption.TCP_NODELAY, true);
+        server.childHandler(new Client2ProxyConnection());
         server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
                 Config.config.getBindPort());
-        server.childHandler(new Client2ProxyConnection());
     }
 
     private void getIdFromRemoteServer(String ip, int port) {
@@ -48,31 +55,30 @@ public class ProxyClient extends AbstractProxy {
                 switch (code) {
                     case ResponseCode
                             .CLOCK_RESP:
-                        long clockTime = msg.readLong();
-                        ctx.channel().writeAndFlush(generateAuthRequest(clockTime));
+                        time = msg.readLong();
+                        log.info("Clock received: " + time);
                         break;
                     case ResponseCode.AUTH_RESP:
                         int id = msg.readInt();
                         byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
+                        log.info(" Id received : {} Iv received: {}", id, iv);
                         msg.readBytes(iv);
                         ClientContext.initContext(id, iv);
                 }
             }
         });
-        ChannelFuture future = b.connect(ip, port).syncUninterruptibly();
-        future.channel().writeAndFlush(generateClockRequest());
-        int count = 0;
-        while (ClientContext.id == -1 && count < 10) {
+        Channel channel = b.connect(ip, port).channel();
+        channel.writeAndFlush(generateClockRequest());
+        log.info("Waiting client context initialized");
+        while (time == -1) {
             try {
-                Thread.sleep(30);
-            } catch (InterruptedException e) {
-                log.error("Interrupted while requesting id", e);
+                Thread.currentThread().join(50);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            count++;
         }
-        if (ClientContext.id == -1) {
-            throw new Exceptions.AuthenticationFailedException("Get id failed");
-        }
+        channel.writeAndFlush(generateAuthRequest(time));
+
     }
 
     private ByteBuf generateClockRequest() {
@@ -83,9 +89,10 @@ public class ProxyClient extends AbstractProxy {
 
     private ByteBuf generateAuthRequest(long clockTime) {
         ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
-        buf.writeShort(RequestCode.AUTH_REQ).writeBytes(
+        buf.writeByte(RequestCode.AUTH_REQ).writeBytes(
                 CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))
-        );
+        ).writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
         return buf;
     }
+
 }
