@@ -2,7 +2,6 @@ package com.proxy.server;
 
 import base.AbstractProxy;
 import base.Config;
-import base.CryptoUtil;
 import base.Platform;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;

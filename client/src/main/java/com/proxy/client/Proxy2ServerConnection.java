@@ -17,11 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Proxy2ServerConnection extends AbstractConnection {
 
-    private SocketAddressEntry socketAddress;
 
-    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnectionStream stream) throws Exceptions.ConnectionTimeoutException {
-        this.socketAddress = entry;
-        this.connectionStream = stream;
+    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
+        super.c2PConnection = c2PConnection;
         if (!buildConnection2Remote(entry)) {
             throw new Exceptions.ConnectionTimeoutException(entry);
         }
@@ -29,16 +27,14 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        if (currentStep == null) {
-            currentStep = connectionStream.nextStep();
-        }
-        currentStep.handle(msg, ctx);
+        ByteBuf decrypted = ClientContext.crypto.decrypt(msg);
+        c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
     }
 
 
     @Override
     public ChannelFuture writeData(ByteBuf data) {
-        return remoteServer.writeAndFlush(data);
+        return channel.writeAndFlush(data);
     }
 
     protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
@@ -51,7 +47,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
         bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         bootstrap.handler(new P2SChannelInitializer());
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
-        this.remoteServer = future.channel();
+        this.channel = future.channel();
         if (!future.isSuccess()) {
             log.error("Connect 2 remote proxy server " + socketAddress.toString() + " failed", future.cause());
             return false;
@@ -61,7 +57,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     public void disconnect() {
-        super.remoteServer.close();
+         channel.close();
     }
 
     private static class P2SChannelInitializer extends ChannelInitializer<NioSocketChannel> {

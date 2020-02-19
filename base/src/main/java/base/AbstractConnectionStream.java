@@ -32,18 +32,26 @@ public abstract class AbstractConnectionStream {
     protected abstract void initStream();
 
     public static abstract class ConnectionStep implements Handler<Object> {
-        protected Object lastResult = null;
+        protected Object executeResult = null;
+        protected ConnectionStep lastStep = null;
 
-        public void setLastResult(Object lastResult) {
-            this.lastResult = lastResult;
+        public Object getExecuteResult() {
+            return executeResult;
+        }
+
+        public void setExecuteResult(Object executeResult) {
+            this.executeResult = executeResult;
+        }
+
+        public ConnectionStep getLastStep() {
+            return lastStep;
+        }
+
+        public void setLastStep(ConnectionStep lastStep) {
+            this.lastStep = lastStep;
         }
     }
 
-    public AbstractConnectionStream then(ByteBuf buf) throws Exception{
-        ConnectionStep step = steps.poll();
-        step.handle(buf, context);
-        return this;
-    }
 
     public AbstractConnectionStream handle(ByteBuf buf) throws Exception{
         ConnectionStep step = steps.peek();

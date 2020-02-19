@@ -1,10 +1,14 @@
 package com.proxy.server;
 
-import base.AbstractConnection;
+import base.*;
+import base.constants.RequestCode;
+import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author kikyou
@@ -12,34 +16,58 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class Client2ProxyConnection extends AbstractConnection {
 
+    private int id;
 
-    private Channel clientChannel;
-
+    private final Crypto crypto = new CryptoImpl() {
+        @Override
+        public ByteBuf encrypt(ByteBuf raw) throws RuntimeException {
+            byte[] secretKey = Config.getUserSecretKeyBin(AbstractHandler.idNameMap.get(id));
+            byte[] iv = AbstractHandler.idIvMap.get(id);
+            try {
+                return CryptoUtil.encrypt(raw, secretKey, iv);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+    };
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
-        if (clientChannel == null) {
-            clientChannel = ctx.channel();
+        if (p2SConnection == null) {
+            buildConnection2RealServer(msg);
         }
-        if (super.connectionStream == null) {
-            connectionStream = new HttpConnectionStream(this, ctx);
+        decryptDataAndSend(msg);
+    }
+
+    private void buildConnection2RealServer(ByteBuf msg) {
+        ByteBuf buf = msg;
+        buf.readerIndex(1);
+        this.id = buf.readInt();
+        buf.readerIndex(0);
+        byte code = buf.readByte();
+        if (code == RequestCode.CONNECT) {
+            crypto.decrypt(buf);
+            SocketAddressEntry socketAddress = getHostFromBuf(buf);
+            super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
         }
-        if (currentStep == null) {
-            try {
-                connectionStream.then(msg);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
-            currentStep = connectionStream.nextStep();
-        } else {
-            currentStep.handle(msg, ctx);
-        }
+    }
+
+    private void decryptDataAndSend(ByteBuf msg) {
+        ByteBuf buf = crypto.decrypt(msg);
+        super.p2SConnection.writeData(buf).syncUninterruptibly();
+    }
+
+    private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
+        short length = buf.readShort();
+        String host = buf.readCharSequence(length, StandardCharsets.US_ASCII).toString();
+        short port = buf.readShort();
+        return new SocketAddressEntry(host, port);
     }
 
 
     @Override
     public ChannelFuture writeData(ByteBuf data) {
-        return clientChannel.writeAndFlush(data);
+        return channel.writeAndFlush(data);
     }
 }

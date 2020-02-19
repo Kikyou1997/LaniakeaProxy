@@ -28,7 +28,7 @@ public class ProxyClient extends AbstractProxy {
     }
 
     private static final String LOCALHOST = "127.0.0.1";
-    long time = -1;
+    private long time = -1;
 
     @Override
     public void start() {
