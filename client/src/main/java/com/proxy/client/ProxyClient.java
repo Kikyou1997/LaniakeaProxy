@@ -39,7 +39,7 @@ public class ProxyClient extends AbstractProxy {
         server.channel(NioServerSocketChannel.class);
         server.childOption(ChannelOption.SO_KEEPALIVE, true);
         server.childOption(ChannelOption.TCP_NODELAY, true);
-        server.childHandler(new Client2ProxyConnection());
+        server.childHandler(new C_Client2ProxyConnection());
         server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
                 Config.config.getBindPort());
     }

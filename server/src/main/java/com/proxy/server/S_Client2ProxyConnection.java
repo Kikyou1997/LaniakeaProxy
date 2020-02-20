@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  * Created at 2020/1/29
  */
 @Slf4j
-public class Client2ProxyConnection extends AbstractConnection {
+public class S_Client2ProxyConnection extends AbstractConnection {
 
     private int id;
 
@@ -25,13 +25,14 @@ public class Client2ProxyConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
-        log.info(HexDump.dump(msg));
         if (p2SConnection == null) {
             buildConnection2RealServer(msg);
             return;
         }
-
-        decryptDataAndSend(msg);
+        if (msg.readByte() == RequestCode.DATA_TRANS_REQ){
+            msg.readerIndex(0);
+            decryptDataAndSend(msg);
+        }
     }
 
     private void buildConnection2RealServer(ByteBuf msg) {
@@ -44,7 +45,7 @@ public class Client2ProxyConnection extends AbstractConnection {
             msg.readBytes(buf);
             buf = crypto.decrypt(buf);
             SocketAddressEntry socketAddress = getHostFromBuf(buf);
-            super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
+            super.p2SConnection = new S_Proxy2ServerConnection(socketAddress, this, id);
         }
     }
 
@@ -52,10 +53,8 @@ public class Client2ProxyConnection extends AbstractConnection {
         msg.readerIndex(Packets.HEADERS_DATA_REQ_LEN);
         var buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
         msg.readBytes(buf);
-        log.info("Before dec: {}", buf.readableBytes());
         buf = crypto.decrypt(buf);
-        log.info("After decrypted: {}" ,buf.readableBytes());
-        log.info("Write to Remote : {}", super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess());
+        super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {

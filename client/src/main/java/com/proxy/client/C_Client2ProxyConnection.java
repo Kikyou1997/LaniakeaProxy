@@ -9,7 +9,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
@@ -23,7 +22,7 @@ import java.nio.charset.StandardCharsets;
  * Created at 2020/1/29
  */
 @Slf4j
-public class Client2ProxyConnection extends AbstractConnection {
+public class C_Client2ProxyConnection extends AbstractConnection {
 
     private Crypto crypto = ClientContext.crypto;
 
@@ -31,7 +30,7 @@ public class Client2ProxyConnection extends AbstractConnection {
 
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
-    public Client2ProxyConnection() {
+    public C_Client2ProxyConnection() {
         super();
         super.c2PConnection = this;
         super.id = ClientContext.id;
@@ -39,6 +38,7 @@ public class Client2ProxyConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+        super.channel = ctx.channel();
         boolean httpConnect = checkHttpHeader(msg);
         if (httpConnect && p2SConnection != null) {
             channel.writeAndFlush(generateHttpConnectionEstablishedResponse());
@@ -57,7 +57,6 @@ public class Client2ProxyConnection extends AbstractConnection {
             buf.writeInt(id);
             buf.writeInt(encrypted.readableBytes());
             buf.writeBytes(encrypted);
-            log.info(HexDump.dump(buf));
             boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
             log.info("client hello sent result: {}", r);
         }
@@ -69,7 +68,8 @@ public class Client2ProxyConnection extends AbstractConnection {
         log.info("Get socketAddress: {}", socketAddress);
         boolean connectRequestSent = false;
         try {
-            p2SConnection = new Proxy2ServerConnection(proxyServerAddressEntry, this);
+            p2SConnection = new C_Proxy2ServerConnection(proxyServerAddressEntry, this);
+            p2SConnection.buildConnection2Remote(proxyServerAddressEntry);
             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
             ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
             buf.writeShort(hostBytes.length);

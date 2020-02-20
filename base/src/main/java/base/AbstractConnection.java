@@ -2,7 +2,6 @@ package base;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -13,10 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
-    private static int THREAD_NUMBER = 1;
-    // UNIT:millisecond
     protected static int CONNECT_TIME_OUT = 2000;
-    protected EventLoopGroup eventLoops = new NioEventLoopGroup(THREAD_NUMBER);
 
     protected AbstractConnection c2PConnection;
     protected AbstractConnection p2SConnection;
@@ -34,13 +30,18 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     public abstract ChannelFuture writeData(ByteBuf data);
 
     protected void disconnect() {
-        if (p2SConnection != null){
-            p2SConnection.disconnect();
+        if (p2SConnection != null) {
+            if (p2SConnection.channel != null){
+                p2SConnection.channel.close();
+            }
         }
-        if (c2PConnection !=null){
-            c2PConnection.disconnect();
+        if (c2PConnection != null) {
+            if (c2PConnection.channel != null) {
+                c2PConnection.channel.close();
+            }
         }
     }
+
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -52,6 +53,10 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
         disconnect();
+    }
+
+    public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
+        return null;
     }
 
     public boolean isChannelActive() {

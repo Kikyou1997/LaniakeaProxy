@@ -33,7 +33,7 @@ public class ProxyServer extends AbstractProxy {
                 ch.pipeline()
                         .addLast(new CustomizedLengthBasedDecoder())
                         .addLast(new MessageProcessor("processor"))
-                        .addLast(new Client2ProxyConnection());
+                        .addLast(new S_Client2ProxyConnection());
             }
         });
         server.bind(config.getServerAddress() == null ? "0.0.0.0" :

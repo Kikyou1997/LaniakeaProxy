@@ -21,11 +21,11 @@ import java.net.InetAddress;
  * @date 2020/1/29
  */
 @Slf4j
-public class Proxy2ServerConnection extends AbstractConnection {
+public class S_Proxy2ServerConnection extends AbstractConnection {
 
     private final Crypto crypto = new ServerCryptoImpl(super.id);
 
-    public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
+    public S_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
         this.c2PConnection = c2PConnection;
         ChannelFuture buildSuccess = buildConnection2Remote(entry);
         if (buildSuccess.isSuccess()) {
@@ -38,14 +38,19 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
+        log.info("SSL: {}", HexDump.dump(msg));
         sendData2Client(msg);
     }
 
     private void sendData2Client(ByteBuf msg) {
         ByteBuf encrypted = crypto.encrypt(msg);
-        int length = encrypted.readableBytes() + Packets.FIELD_CODE_LENGTH + Packets.FIELD_LENGTH_LEN;
+        encrypted.readerIndex(0);
+        int length = encrypted.readableBytes();
         ByteBuf finalData = PooledByteBufAllocator.DEFAULT.buffer(length);
-        finalData.writeByte(ResponseCode.DATA_TRANS_RESP).writeInt(length).writeBytes(encrypted);
+        finalData
+                .writeByte(ResponseCode.DATA_TRANS_RESP)
+                .writeInt(length)
+                .writeBytes(encrypted);
         c2PConnection.writeData(finalData);
     }
 
@@ -59,7 +64,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
         }
     }
 
-    protected ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
+    public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();

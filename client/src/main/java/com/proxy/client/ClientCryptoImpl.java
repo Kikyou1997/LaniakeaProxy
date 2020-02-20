@@ -29,7 +29,7 @@ public class ClientCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
-            return CryptoUtil.decrypt(cypherText, iv, sk);
+            return CryptoUtil.decrypt(cypherText,  sk, iv);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
