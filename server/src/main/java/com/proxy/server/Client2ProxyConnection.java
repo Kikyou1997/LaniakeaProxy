@@ -4,9 +4,9 @@ import base.*;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,23 +14,12 @@ import java.nio.charset.StandardCharsets;
  * @author kikyou
  * Created at 2020/1/29
  */
+@Slf4j
 public class Client2ProxyConnection extends AbstractConnection {
 
     private int id;
 
-    private final Crypto crypto = new CryptoImpl() {
-        @Override
-        public ByteBuf encrypt(ByteBuf raw) throws RuntimeException {
-            byte[] secretKey = Config.getUserSecretKeyBin(AbstractHandler.idNameMap.get(id));
-            byte[] iv = AbstractHandler.idIvMap.get(id);
-            try {
-                return CryptoUtil.encrypt(raw, secretKey, iv);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    };
+    private Crypto crypto = null;
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
@@ -44,9 +33,11 @@ public class Client2ProxyConnection extends AbstractConnection {
         msg.readerIndex(0);
         byte code = msg.readByte();
         this.id = msg.readInt();
+        crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
             crypto.decrypt(msg);
             SocketAddressEntry socketAddress = getHostFromBuf(msg);
+            log.info("Trying to build connection with {}", socketAddress);
             super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
         }
     }

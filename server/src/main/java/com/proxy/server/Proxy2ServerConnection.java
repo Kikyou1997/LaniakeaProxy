@@ -7,7 +7,6 @@ import base.interfaces.Crypto;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
@@ -18,19 +17,7 @@ import io.netty.channel.ChannelOption;
  */
 public class Proxy2ServerConnection extends AbstractConnection {
 
-    private final Crypto crypto = new CryptoImpl() {
-        @Override
-        public ByteBuf encrypt(ByteBuf raw) throws RuntimeException {
-            byte[] secretKey = Config.getUserSecretKeyBin(AbstractHandler.idNameMap.get(id));
-            byte[] iv = AbstractHandler.idIvMap.get(id);
-            try {
-                return CryptoUtil.encrypt(raw, secretKey, iv);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    };
+    private final Crypto crypto = new ServerCryptoImpl(super.id);
 
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
         this.c2PConnection = c2PConnection;

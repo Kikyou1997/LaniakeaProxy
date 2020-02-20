@@ -2,8 +2,6 @@ package com.proxy.server;
 
 import static base.constants.RequestCode.*;
 
-import base.AuthImpl;
-import base.CryptoImpl;
 import base.MessageGenerator;
 import base.constants.Packets;
 import base.interfaces.Handler;
@@ -30,7 +28,6 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
     {
         byteHandlerMap.put(AUTH_REQ, new AuthImpl());
-        byteHandlerMap.put(DATA_TRANS_REQ, new CryptoImpl());
     }
 
     @Override
@@ -48,7 +45,6 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 handler.handle(msg, ctx);
                 return;
         }
-        removeRedundantHeader(msg);
         ctx.fireChannelRead(msg);
     }
 

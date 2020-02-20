@@ -1,9 +1,7 @@
 package com.proxy.client;
 
-import base.CryptoImpl;
 import base.interfaces.Crypto;
 import io.netty.channel.ChannelFuture;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,7 +18,7 @@ public class ClientContext {
     public static void initContext(int id, byte[] iv) {
         ClientContext.id = id;
         ClientContext.iv = iv;
-        ClientContext.crypto = new CryptoImpl(id, iv);
+        ClientContext.crypto = new ClientCryptoImpl();
     }
 
     public static void failedThenQuit(ChannelFuture future) {

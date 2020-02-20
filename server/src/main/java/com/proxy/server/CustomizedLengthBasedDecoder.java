@@ -18,6 +18,7 @@ public class CustomizedLengthBasedDecoder extends LengthFieldBasedFrameDecoder {
 
     @Override
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        in.readerIndex(0);
         if (in.readByte() == RequestCode.CONNECT) {
             ctx.fireChannelRead(in);
             return in;

@@ -23,24 +23,7 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class Client2ProxyConnection extends AbstractConnection {
 
-    private Crypto crypto = new CryptoImpl() {
-        @Override
-        public ByteBuf encrypt(ByteBuf raw) throws RuntimeException {
-            ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(raw.readableBytes() - 1);
-            raw.readerIndex(1);
-            raw.readBytes(buf);
-            try {
-                CryptoUtil.encrypt(buf, AbstractHandler.idIvMap.get(id), Config.getUserSecretKeyBin(idNameMap.get(id)));
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("Error", e);
-            }
-            raw.clear();
-            raw.writeByte(RequestCode.CONNECT);
-            raw.writeBytes(buf);
-            return raw;
-        }
-    };
+    private Crypto crypto = ClientContext.crypto;
 
     private boolean tunnelBuilt;
 
@@ -49,6 +32,7 @@ public class Client2ProxyConnection extends AbstractConnection {
     public Client2ProxyConnection() {
         super();
         super.c2PConnection = this;
+        super.id = ClientContext.id;
     }
 
     @Override
@@ -57,14 +41,15 @@ public class Client2ProxyConnection extends AbstractConnection {
         if (httpConnect && p2SConnection != null) {
             channel.writeAndFlush(generateHttpConnectionEstablishedResponse());
         }
-        if (!tunnelBuilt || !p2SConnection.isChannelActive()) {
+        if (!tunnelBuilt) {
             tunnelBuilt = buildTunnel(msg, httpConnect);
             return;
         }
         if (p2SConnection != null) {
-            log.info("Original Size: " + msg.readableBytes());
-            ByteBuf encrypted = ClientContext.crypto.encrypt(msg);
-            log.info("Encrypted Size: " + encrypted.readableBytes());
+            msg.readerIndex(0);
+            ByteBuf encrypted = crypto.encrypt(msg);
+            byte[] e = new byte[encrypted.readableBytes()];
+            HexDump.dump("C E", (e));
             p2SConnection.writeData(encrypted);
         }
     }
@@ -73,13 +58,19 @@ public class Client2ProxyConnection extends AbstractConnection {
     private boolean buildTunnel(ByteBuf msg, boolean httpConnect) {
         msg.readerIndex(0);
         SocketAddressEntry socketAddress = getSocketAddressFromBuf(msg, httpConnect);
+        log.info("Get socketAddress: {}", socketAddress);
         boolean connectRequestSent = false;
         try {
             p2SConnection = new Proxy2ServerConnection(proxyServerAddressEntry, this);
             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
-            ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT, Converter.convertInteger2ByteBigEnding(id),
-                    Converter.convertShort2ByteArray((short) hostBytes.length), hostBytes, Converter.convertShort2ByteArray(socketAddress.getPort()));
+            ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
+                    Converter.convertInteger2ByteBigEnding(id),
+                    Converter.convertShort2ByteArray((short) hostBytes.length),
+                    hostBytes, Converter.convertShort2ByteArray(socketAddress.getPort()));
+            log.info("Before enc: {}", HexDump.dump(buildConnectionRequest));
             crypto.encrypt(buildConnectionRequest);
+            log.info("After enc: {}", buildConnectionRequest.readableBytes());
+            log.info(HexDump.dump(buildConnectionRequest));
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
         } catch (Exceptions.ConnectionTimeoutException e) {
             log.error("Connect to remote proxy server timeout");

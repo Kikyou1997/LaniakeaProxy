@@ -116,19 +116,19 @@ public class CryptoUtil {
         return new IvParameterSpec(random.generateSeed(16)).getIV();
     }
 
+    /**
+     *
+     * @return 返回一个新的加密过的ByteBuf实例
+     */
     public static ByteBuf encrypt(ByteBuf data, byte[] iv, byte[] secretKey) throws Exception {
         byte[] re = encrypt(ProxyUtil.getBytesFromByteBuf(data), secretKey, iv);
         return ProxyUtil.getByteBufFromBytes(re);
     }
 
 
-    public static Object decrypt(ByteBuf data, byte[] secretKey, byte[] iv) throws Exception {
+    public static ByteBuf decrypt(ByteBuf data, byte[] secretKey, byte[] iv) throws Exception {
         byte[] re = decrypt(ProxyUtil.getBytesFromByteBuf(data), secretKey, iv);
         return ProxyUtil.getByteBufFromBytes(re);
-    }
-
-    public static Object decrypt(Object data, byte[] id) throws Exception {
-        return decrypt(data, id);
     }
 
     public static byte[] decodeFromString(String encoded) {

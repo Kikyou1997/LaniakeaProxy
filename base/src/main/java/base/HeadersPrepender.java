@@ -33,9 +33,12 @@ public abstract class HeadersPrepender extends MessageToMessageEncoder<ByteBuf> 
         protected void encode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
             int headerLength = Packets.HEADERS_DATA_REQ_LEN;
             int length = msg.readableBytes() + headerLength;
-            out.add(ctx.alloc().buffer(Packets.FIELD_CODE_LENGTH).writeByte(RequestCode.DATA_TRANS_REQ));
-            out.add(ctx.alloc().buffer(Packets.FIELD_ID_LENGTH).writeInt(id));
-            out.add(ctx.alloc().buffer(Packets.FIELD_LENGTH_LEN).writeInt(length));
+            if (msg.readByte() != RequestCode.CONNECT) {
+                out.add(ctx.alloc().buffer(Packets.FIELD_CODE_LENGTH).writeByte(RequestCode.DATA_TRANS_REQ));
+                out.add(ctx.alloc().buffer(Packets.FIELD_ID_LENGTH).writeInt(id));
+                out.add(ctx.alloc().buffer(Packets.FIELD_LENGTH_LEN).writeInt(length));
+            }
+            msg.readerIndex(0);
             out.add(ctx.alloc().buffer(msg.readableBytes()).writeBytes(msg));
         }
     }

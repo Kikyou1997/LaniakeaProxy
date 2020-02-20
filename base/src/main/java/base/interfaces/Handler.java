@@ -8,5 +8,5 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public interface Handler<R> {
 
-    R handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException;
+    R handle(Object msg, ChannelHandlerContext ctx) ;
 }

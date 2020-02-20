@@ -1,5 +1,6 @@
-package base;
+package com.proxy.server;
 
+import base.*;
 import base.constants.Packets;
 import base.constants.ResponseCode;
 import base.interfaces.Auth;
@@ -49,13 +50,13 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
         if (msg instanceof ByteBuf) {
             if (isValid(msg)) {
                 int id = ids.getAndIncrement();
-                idTimeMap.put(id, System.currentTimeMillis());
-                idNameMap.put(id, name.get());
+                ServerContext.idTimeMap.put(id, System.currentTimeMillis());
+                ServerContext.idNameMap.put(id, name.get());
                 byte[] iv = CryptoUtil.ivGenerator();
                 log.info("Generated id: {} Iv: {}", id, iv);
                 ByteBuf resp = createAuthResponse(id, iv);
                 sendResponse(resp);
-                idIvMap.put(id, iv);
+                ServerContext.idIvMap.put(id, iv);
             } else {
                 context.channel().close();
             }
