@@ -55,7 +55,7 @@ public class Client2ProxyConnection extends AbstractConnection {
             var buf = PooledByteBufAllocator.DEFAULT.buffer();
             buf.writeByte(RequestCode.DATA_TRANS_REQ);
             buf.writeInt(id);
-            buf.writeInt(totalLength);
+            buf.writeInt(encrypted.readableBytes());
             buf.writeBytes(encrypted);
             log.info(HexDump.dump(buf));
             boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();

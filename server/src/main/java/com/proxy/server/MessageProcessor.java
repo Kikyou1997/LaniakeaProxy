@@ -51,7 +51,7 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
                 handler.handle(msg, ctx);
                 return;
         }
-        ctx.fireChannelRead(msg);
+        ctx.fireChannelRead((Object) msg);
     }
 
     public static byte getRequestCode(ByteBuf msg) {
