@@ -3,7 +3,6 @@ package base;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -11,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection extends SimpleChannelInboundHandler<ByteBuf> {
+public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
     private static int THREAD_NUMBER = 1;
@@ -25,9 +24,9 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         channel = ctx.channel();
-        doRead(ctx, msg);
+        doRead(ctx, (ByteBuf) msg);
     }
 
     protected abstract void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
@@ -35,8 +34,12 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
     public abstract ChannelFuture writeData(ByteBuf data);
 
     protected void disconnect() {
-        p2SConnection.disconnect();
-        c2PConnection.disconnect();
+        if (p2SConnection != null){
+            p2SConnection.disconnect();
+        }
+        if (c2PConnection !=null){
+            c2PConnection.disconnect();
+        }
     }
 
     @Override
@@ -47,6 +50,7 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
         disconnect();
     }
 

@@ -27,8 +27,10 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
         this.c2PConnection = c2PConnection;
-        if (!buildConnection2Remote(entry)) {
-            log.error("Build connection to real http server failed");
+        ChannelFuture buildSuccess = buildConnection2Remote(entry);
+        if (buildSuccess.isSuccess()) {
+            super.channel = buildSuccess.channel();
+        } else {
             throw new Exceptions.ConnectionTimeoutException(entry);
         }
         super.id = id;
@@ -36,7 +38,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
-
         sendData2Client(msg);
     }
 
@@ -51,10 +52,14 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     public ChannelFuture writeData(ByteBuf data) {
-        return channel.writeAndFlush(data);
+        if (channel.isWritable()){
+            return channel.writeAndFlush(data);
+        } else {
+            throw new Exceptions.ChannelUnwritable(channel);
+        }
     }
 
-    protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
+    protected ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
@@ -65,7 +70,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
         ChannelFuture future = bootstrap.connect(ip, (int) port);
         future.syncUninterruptibly();
-        return future.isSuccess();
+        return future;
     }
 
     @Override

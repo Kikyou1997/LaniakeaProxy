@@ -8,6 +8,7 @@ import base.interfaces.Handler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created at 2020/2/1
  */
 @ChannelHandler.Sharable
-public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
+public class MessageProcessor extends ChannelInboundHandlerAdapter {
 
     private String handlerName;
 
@@ -37,14 +38,14 @@ public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object obj) throws Exception {
+        var msg = (ByteBuf)obj;
         byte requestCode = getRequestCode(msg);
         Handler handler = null;
         switch (requestCode) {
             case GET_CLOCK_REQ:
                 ByteBuf buf = MessageGenerator.generateClockResponse();
                 ctx.channel().writeAndFlush(buf);
-                ReferenceCountUtil.release(buf);
                 return;
             case AUTH_REQ:
                 handler = byteHandlerMap.get(AUTH_REQ);

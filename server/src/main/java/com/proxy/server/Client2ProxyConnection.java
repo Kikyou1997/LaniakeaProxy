@@ -55,7 +55,7 @@ public class Client2ProxyConnection extends AbstractConnection {
         log.info("Before dec: {}", buf.readableBytes());
         buf = crypto.decrypt(buf);
         log.info("After decrypted: {}" ,buf.readableBytes());
-        super.p2SConnection.writeData(buf).syncUninterruptibly();
+        log.info("Write to Remote : {}", super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess());
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
