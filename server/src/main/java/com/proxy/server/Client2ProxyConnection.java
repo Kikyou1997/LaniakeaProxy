@@ -1,6 +1,7 @@
 package com.proxy.server;
 
 import base.*;
+import base.constants.Packets;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
@@ -47,7 +48,10 @@ public class Client2ProxyConnection extends AbstractConnection {
     }
 
     private void decryptDataAndSend(ByteBuf msg) {
-        ByteBuf buf = crypto.decrypt(msg);
+        msg.readerIndex(Packets.HEADERS_DATA_REQ_LEN);
+        var buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
+        msg.readBytes(buf);
+        buf = crypto.decrypt(buf);
         super.p2SConnection.writeData(buf).syncUninterruptibly();
     }
 

@@ -10,11 +10,17 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.extern.slf4j.Slf4j;
+
+import java.net.InetAddress;
 
 /**
  * @author kikyou
  * @date 2020/1/29
  */
+@Slf4j
 public class Proxy2ServerConnection extends AbstractConnection {
 
     private final Crypto crypto = new ServerCryptoImpl(super.id);
@@ -22,6 +28,7 @@ public class Proxy2ServerConnection extends AbstractConnection {
     public Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
         this.c2PConnection = c2PConnection;
         if (!buildConnection2Remote(entry)) {
+            log.error("Build connection to real http server failed");
             throw new Exceptions.ConnectionTimeoutException(entry);
         }
         super.id = id;
@@ -49,13 +56,18 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
+        log.info("Building connection to {}", socketAddress);
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(super.eventLoops);
+        bootstrap.channel(NioSocketChannel.class);
+        bootstrap.group(new NioEventLoopGroup(1));
+        bootstrap.handler(this);
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
-        ChannelFuture future = bootstrap.connect(ip, port);
+        ChannelFuture future = bootstrap.connect(ip, (int) port);
         future.syncUninterruptibly();
+        log.info("Result {}", future.isSuccess());
+        log.error("Cause", future.cause());
         this.channel = future.channel();
         return future.isSuccess();
     }

@@ -48,10 +48,14 @@ public class Client2ProxyConnection extends AbstractConnection {
         }
         if (p2SConnection != null) {
             msg.readerIndex(0);
-            ByteBuf encrypted = crypto.encrypt(msg);
-            byte[] e = new byte[encrypted.readableBytes()];
-            HexDump.dump("C E", (e));
-            p2SConnection.writeData(encrypted);
+            var encrypted = crypto.encrypt(msg);
+            var totalLength = Packets.HEADERS_DATA_REQ_LEN + encrypted.readableBytes();
+            var buf = PooledByteBufAllocator.DEFAULT.buffer();
+            buf.writeByte(RequestCode.DATA_TRANS_REQ);
+            buf.writeInt(id);
+            buf.writeInt(totalLength);
+            buf.writeBytes(encrypted);
+            p2SConnection.writeData(buf);
         }
     }
 
@@ -95,10 +99,11 @@ public class Client2ProxyConnection extends AbstractConnection {
         String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
         String[] strings = httpMessage.split("\n");
         String[] host = strings[1].split(":");
+        host[1] = host[1].trim();
         if (host.length < 3) {
             if (tunnel) {
                 // 这里需要调用trim是因为Http报文格式: [HttpHeader]:[blank][value] 所以需要去掉多余的空格
-                return new SocketAddressEntry(host[1].trim(), (short) 443);
+                return new SocketAddressEntry(host[1], (short) 443);
             } else {
                 return new SocketAddressEntry(host[1].trim(), (short) 80);
             }
