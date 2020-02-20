@@ -42,7 +42,7 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
-            return CryptoUtil.decrypt(cypherText, ServerContext.idIvMap.get(id), ServerContext.idIvMap.get(id));
+            return CryptoUtil.decrypt(cypherText, Config.getUserSecretKeyBin(ServerContext.idNameMap.get(id)), ServerContext.idIvMap.get(id));
         } catch (Exception e) {
             e.printStackTrace();
             return null;

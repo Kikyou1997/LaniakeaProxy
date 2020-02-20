@@ -2,6 +2,7 @@ package com.proxy.client;
 
 import base.*;
 
+import base.constants.Packets;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
@@ -63,13 +64,15 @@ public class Client2ProxyConnection extends AbstractConnection {
         try {
             p2SConnection = new Proxy2ServerConnection(proxyServerAddressEntry, this);
             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
+            ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
+            buf.writeShort(hostBytes.length);
+            buf.writeBytes(hostBytes);
+            buf.writeShort(socketAddress.getPort());
+            buf = crypto.encrypt(buf);
+            byte[] encrypted = ProxyUtil.getBytesFromByteBuf(buf);
             ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
                     Converter.convertInteger2ByteBigEnding(id),
-                    Converter.convertShort2ByteArray((short) hostBytes.length),
-                    hostBytes, Converter.convertShort2ByteArray(socketAddress.getPort()));
-            log.info("Before enc: {}", HexDump.dump(buildConnectionRequest));
-            crypto.encrypt(buildConnectionRequest);
-            log.info("After enc: {}", buildConnectionRequest.readableBytes());
+                    encrypted);
             log.info(HexDump.dump(buildConnectionRequest));
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
         } catch (Exceptions.ConnectionTimeoutException e) {

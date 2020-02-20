@@ -4,6 +4,7 @@ import base.*;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +36,11 @@ public class Client2ProxyConnection extends AbstractConnection {
         this.id = msg.readInt();
         crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
-            crypto.decrypt(msg);
-            SocketAddressEntry socketAddress = getHostFromBuf(msg);
+            log.info("Readable bytes: {}", msg.readableBytes());
+            ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
+            msg.readBytes(buf);
+            buf = crypto.decrypt(buf);
+            SocketAddressEntry socketAddress = getHostFromBuf(buf);
             log.info("Trying to build connection with {}", socketAddress);
             super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
         }
