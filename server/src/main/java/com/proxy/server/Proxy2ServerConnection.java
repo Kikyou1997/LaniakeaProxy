@@ -56,7 +56,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
 
     protected boolean buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
-        log.info("Building connection to {}", socketAddress);
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);
@@ -66,9 +65,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
         ChannelFuture future = bootstrap.connect(ip, (int) port);
         future.syncUninterruptibly();
-        log.info("Result {}", future.isSuccess());
-        log.error("Cause", future.cause());
-        this.channel = future.channel();
         return future.isSuccess();
     }
 

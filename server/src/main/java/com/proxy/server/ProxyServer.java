@@ -31,8 +31,7 @@ public class ProxyServer extends AbstractProxy {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline()
-                        .addLast(new MessageProcessor())
-                        .addLast(new CustomizedLengthBasedDecoder())
+                        .addLast(new MessageProcessor("processor"))
                         .addLast(new Client2ProxyConnection());
             }
         });

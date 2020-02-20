@@ -23,8 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @ChannelHandler.Sharable
 public class MessageProcessor extends SimpleChannelInboundHandler<ByteBuf> {
 
+    private String handlerName;
+
+    public MessageProcessor(String handlerName) {
+        this.handlerName = handlerName;
+    }
+
     private Map<Byte, Handler> byteHandlerMap = new ConcurrentHashMap<>();
-    private static final int HEADER_LENGTH =  Packets.FIELD_CODE_LENGTH + Packets.FIELD_ID_LENGTH + Packets.FIELD_LENGTH_LEN;
+    private static final int HEADER_LENGTH = Packets.FIELD_CODE_LENGTH + Packets.FIELD_ID_LENGTH + Packets.FIELD_LENGTH_LEN;
 
     {
         byteHandlerMap.put(AUTH_REQ, new AuthImpl());

@@ -53,8 +53,7 @@ public class ProxyClient extends AbstractProxy {
             protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
                 byte code = msg.readByte();
                 switch (code) {
-                    case ResponseCode
-                            .CLOCK_RESP:
+                    case ResponseCode.CLOCK_RESP:
                         time = msg.readLong();
                         log.info("Clock received: " + time);
                         break;
@@ -64,6 +63,7 @@ public class ProxyClient extends AbstractProxy {
                         msg.readBytes(iv);
                         log.info(" Id received : {} Iv received: {}", id, iv);
                         ClientContext.initContext(id, iv);
+                        ctx.close();
                 }
             }
         });

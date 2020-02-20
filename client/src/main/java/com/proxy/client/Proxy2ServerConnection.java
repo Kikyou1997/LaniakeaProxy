@@ -44,7 +44,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.group(new NioEventLoopGroup(1));
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
-        bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         bootstrap.handler(new P2SChannelInitializer());
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
         this.channel = future.channel();
@@ -64,7 +63,6 @@ public class Proxy2ServerConnection extends AbstractConnection {
         @Override
         protected void initChannel(NioSocketChannel ch) throws Exception {
             ch.pipeline()
-                    .addLast(new HeadersPrepender.RequestHeadersPrepender(ClientContext.id))
                     //  返回的包不包括id字段
                     .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FIELD_CODE_LENGTH, 4));
 

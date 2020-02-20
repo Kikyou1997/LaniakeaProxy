@@ -25,9 +25,12 @@ public class Client2ProxyConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
+        log.info(HexDump.dump(msg));
         if (p2SConnection == null) {
             buildConnection2RealServer(msg);
+            return;
         }
+
         decryptDataAndSend(msg);
     }
 
@@ -37,12 +40,10 @@ public class Client2ProxyConnection extends AbstractConnection {
         this.id = msg.readInt();
         crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
-            log.info("Readable bytes: {}", msg.readableBytes());
             ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
             msg.readBytes(buf);
             buf = crypto.decrypt(buf);
             SocketAddressEntry socketAddress = getHostFromBuf(buf);
-            log.info("Trying to build connection with {}", socketAddress);
             super.p2SConnection = new Proxy2ServerConnection(socketAddress, this, id);
         }
     }
@@ -51,7 +52,9 @@ public class Client2ProxyConnection extends AbstractConnection {
         msg.readerIndex(Packets.HEADERS_DATA_REQ_LEN);
         var buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
         msg.readBytes(buf);
+        log.info("Before dec: {}", buf.readableBytes());
         buf = crypto.decrypt(buf);
+        log.info("After decrypted: {}" ,buf.readableBytes());
         super.p2SConnection.writeData(buf).syncUninterruptibly();
     }
 

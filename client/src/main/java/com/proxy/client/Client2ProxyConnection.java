@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
@@ -49,16 +50,18 @@ public class Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
+            log.info("Client Enc: {}", encrypted.readableBytes());
             var totalLength = Packets.HEADERS_DATA_REQ_LEN + encrypted.readableBytes();
             var buf = PooledByteBufAllocator.DEFAULT.buffer();
             buf.writeByte(RequestCode.DATA_TRANS_REQ);
             buf.writeInt(id);
             buf.writeInt(totalLength);
             buf.writeBytes(encrypted);
-            p2SConnection.writeData(buf);
+            log.info(HexDump.dump(buf));
+            boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
+            log.info("client hello sent result: {}", r);
         }
     }
-
 
     private boolean buildTunnel(ByteBuf msg, boolean httpConnect) {
         msg.readerIndex(0);
@@ -77,10 +80,9 @@ public class Client2ProxyConnection extends AbstractConnection {
             ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
                     Converter.convertInteger2ByteBigEnding(id),
                     encrypted);
-            log.info(HexDump.dump(buildConnectionRequest));
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
         } catch (Exceptions.ConnectionTimeoutException e) {
-            log.error("Connect to remote proxy server timeout");
+            log.error("Connect to remote proxy server timeout", e);
         }
         boolean responseSent = false;
         if (httpConnect) {

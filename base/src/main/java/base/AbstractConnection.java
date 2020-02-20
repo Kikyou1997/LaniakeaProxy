@@ -4,19 +4,22 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author kikyou
  * @date 2020/1/29
  */
+@Slf4j
 public abstract class AbstractConnection extends SimpleChannelInboundHandler<ByteBuf> {
 
     protected Channel channel;
-    protected AbstractConnection c2PConnection;
     private static int THREAD_NUMBER = 1;
     // UNIT:millisecond
     protected static int CONNECT_TIME_OUT = 2000;
     protected EventLoopGroup eventLoops = new NioEventLoopGroup(THREAD_NUMBER);
+
+    protected AbstractConnection c2PConnection;
     protected AbstractConnection p2SConnection;
     protected int id;
 
@@ -36,37 +39,14 @@ public abstract class AbstractConnection extends SimpleChannelInboundHandler<Byt
         c2PConnection.disconnect();
     }
 
-    protected static class Client2ProxyChannelInitializer extends ChannelInitializer<NioSocketChannel> {
-
-        private int id;
-
-        public Client2ProxyChannelInitializer(int id) {
-            this.id = id;
-        }
-
-        @Override
-        protected void initChannel(NioSocketChannel ch) throws Exception {
-            ch.pipeline().
-                    addLast(new HeadersPrepender.RequestHeadersPrepender(id));
-        }
-    }
-
-    protected static class Proxy2ServerChannelInitializer extends ChannelInitializer<NioSocketChannel> {
-
-        private int id;
-
-        public Proxy2ServerChannelInitializer(int id) {
-            this.id = id;
-        }
-
-        @Override
-        protected void initChannel(NioSocketChannel ch) throws Exception {
-            ch.pipeline().addLast(new HeadersPrepender.ResponseHeadersPrepender(id));
-        }
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        log.info("Channel {} is inactive,  will be closed", ProxyUtil.getRemoteAddressAndPortFromChannel(ctx));
+        disconnect();
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         disconnect();
     }
 
