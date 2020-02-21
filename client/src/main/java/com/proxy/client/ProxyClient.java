@@ -10,6 +10,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,13 @@ public class ProxyClient extends AbstractProxy {
         server.channel(NioServerSocketChannel.class);
         server.childOption(ChannelOption.SO_KEEPALIVE, true);
         server.childOption(ChannelOption.TCP_NODELAY, true);
-        server.childHandler(new C_Client2ProxyConnection());
+        server.childHandler(new ChannelInitializer<SocketChannel>() {
+
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast(new C_Client2ProxyConnection());
+            }
+        });
         server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
                 Config.config.getBindPort());
     }

@@ -30,10 +30,12 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
+    private static int INSTANCE_COUNT = 0;
+
     public C_Client2ProxyConnection() {
-        super();
         super.c2PConnection = this;
         super.id = ClientContext.id;
+        log.debug("instance count: {}", ++INSTANCE_COUNT);
     }
 
     @Override
@@ -50,15 +52,12 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            log.info(HexDump.dump(encrypted));
-            log.info("Client Enc: {}", encrypted.readableBytes());
             var buf = PooledByteBufAllocator.DEFAULT.buffer();
             buf.writeByte(RequestCode.DATA_TRANS_REQ);
             buf.writeInt(id);
             buf.writeInt(encrypted.readableBytes());
             buf.writeBytes(encrypted);
             boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
-            log.info("client hello sent result: {}", r);
         }
     }
 
