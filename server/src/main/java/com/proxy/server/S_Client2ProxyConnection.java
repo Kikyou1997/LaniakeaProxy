@@ -29,7 +29,8 @@ public class S_Client2ProxyConnection extends AbstractConnection {
             buildConnection2RealServer(msg);
             return;
         }
-        if (msg.readByte() == RequestCode.DATA_TRANS_REQ){
+        msg.readerIndex(0);
+        if (msg.readByte() == RequestCode.DATA_TRANS_REQ) {
             msg.readerIndex(0);
             decryptDataAndSend(msg);
         }
@@ -39,6 +40,7 @@ public class S_Client2ProxyConnection extends AbstractConnection {
         msg.readerIndex(0);
         byte code = msg.readByte();
         this.id = msg.readInt();
+        int length = msg.readInt();
         crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
             ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
@@ -51,15 +53,16 @@ public class S_Client2ProxyConnection extends AbstractConnection {
 
     private void decryptDataAndSend(ByteBuf msg) {
         msg.readerIndex(Packets.HEADERS_DATA_REQ_LEN);
+        log.info("S: readable bytes:{}", msg.readableBytes());
         var buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
         msg.readBytes(buf);
+        log.info(HexDump.dump(buf));
         buf = crypto.decrypt(buf);
-        super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
+        log.info("Send Data to Real Sever: {}", super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess());
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
-        short length = buf.readShort();
-        String host = buf.readCharSequence(length, StandardCharsets.US_ASCII).toString();
+        String host = buf.readCharSequence(buf.readableBytes() - Packets.FILED_PORT_LENGTH, StandardCharsets.US_ASCII).toString();
         short port = buf.readShort();
         return new SocketAddressEntry(host, port);
     }

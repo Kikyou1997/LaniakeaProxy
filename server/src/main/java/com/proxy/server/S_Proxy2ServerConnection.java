@@ -38,7 +38,6 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
-        log.info("SSL: {}", HexDump.dump(msg));
         sendData2Client(msg);
     }
 

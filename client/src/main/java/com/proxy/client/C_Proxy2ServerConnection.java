@@ -18,7 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class C_Proxy2ServerConnection extends AbstractConnection {
 
-    private static int temp = 0;
+    //private static int temp = 0;
+
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
     }
@@ -30,7 +31,6 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
         msg.readBytes(buf);
         buf.readerIndex(0);
         ByteBuf decrypted = ClientContext.crypto.decrypt(buf);
-        log.info("SSL: {}", HexDump.dump(decrypted));
         c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
     }
 

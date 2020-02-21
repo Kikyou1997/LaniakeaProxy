@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kikyou
  * Created at 2020/2/1
  */
-@ChannelHandler.Sharable
 public class MessageProcessor extends ChannelInboundHandlerAdapter {
 
     private String handlerName;
@@ -50,7 +49,8 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
                 handler.handle(msg, ctx);
                 return;
         }
-        ctx.fireChannelRead((Object) msg);
+        msg.readerIndex(0);
+        ctx.fireChannelRead(msg);
     }
 
     public static byte getRequestCode(ByteBuf msg) {

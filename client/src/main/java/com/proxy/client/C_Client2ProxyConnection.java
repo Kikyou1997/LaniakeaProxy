@@ -50,8 +50,8 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
+            log.info(HexDump.dump(encrypted));
             log.info("Client Enc: {}", encrypted.readableBytes());
-            var totalLength = Packets.HEADERS_DATA_REQ_LEN + encrypted.readableBytes();
             var buf = PooledByteBufAllocator.DEFAULT.buffer();
             buf.writeByte(RequestCode.DATA_TRANS_REQ);
             buf.writeInt(id);
@@ -72,13 +72,12 @@ public class C_Client2ProxyConnection extends AbstractConnection {
             p2SConnection.buildConnection2Remote(proxyServerAddressEntry);
             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
             ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
-            buf.writeShort(hostBytes.length);
             buf.writeBytes(hostBytes);
             buf.writeShort(socketAddress.getPort());
             buf = crypto.encrypt(buf);
             byte[] encrypted = ProxyUtil.getBytesFromByteBuf(buf);
             ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
-                    Converter.convertInteger2ByteBigEnding(id),
+                    Converter.convertInteger2ByteBigEnding(id),Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
                     encrypted);
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
         } catch (Exceptions.ConnectionTimeoutException e) {

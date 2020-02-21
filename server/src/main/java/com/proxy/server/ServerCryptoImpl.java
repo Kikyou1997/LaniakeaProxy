@@ -7,17 +7,23 @@ import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author kikyou
  * Created at 2020/2/20
  */
+@Slf4j
 public class ServerCryptoImpl implements Crypto {
 
     private int id;
+    private byte[] secretKey = null;
+    private byte[] iv = null;
 
     public ServerCryptoImpl(int id) {
         this.id = id;
+        secretKey = Config.getUserSecretKeyBin(ServerContext.idNameMap.get(id));
+        iv = ServerContext.idIvMap.get(id);
     }
 
     public ServerCryptoImpl() {
@@ -42,7 +48,7 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
-            return CryptoUtil.decrypt(cypherText, Config.getUserSecretKeyBin(ServerContext.idNameMap.get(id)), ServerContext.idIvMap.get(id));
+            return CryptoUtil.decrypt(cypherText, secretKey, iv);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
