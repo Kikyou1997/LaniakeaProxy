@@ -23,13 +23,9 @@ import java.net.InetAddress;
 @Slf4j
 public class S_Proxy2ServerConnection extends AbstractConnection {
 
-    private static int INSTANCE_COUNT = 0;
-
     private final Crypto crypto = new ServerCryptoImpl(super.id);
 
     public S_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
-        S_Proxy2ServerConnection.INSTANCE_COUNT++;
-        log.debug("S_P instance count: {}", INSTANCE_COUNT);
         this.c2PConnection = c2PConnection;
         ChannelFuture buildSuccess = buildConnection2Remote(entry);
         if (buildSuccess.isSuccess()) {

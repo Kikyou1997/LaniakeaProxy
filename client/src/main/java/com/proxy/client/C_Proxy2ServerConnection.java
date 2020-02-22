@@ -63,12 +63,10 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
         bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
-        if (future.isSuccess()) {
-            log.info("Connect to {} success", socketAddress);
-        } else {
-            log.error("Connect to {} failed", socketAddress, future.cause());
-        }
         this.channel = future.channel();
+        if (!future.isSuccess()) {
+            this.channel.close();
+        }
         return future;
     }
 

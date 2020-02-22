@@ -30,12 +30,10 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
-    private static int INSTANCE_COUNT = 0;
 
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
         super.id = ClientContext.id;
-        log.debug("instance count: {}", ++INSTANCE_COUNT);
     }
 
     @Override
@@ -64,7 +62,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
     private boolean buildTunnel(ByteBuf msg, boolean httpConnect) {
         msg.readerIndex(0);
         SocketAddressEntry socketAddress = getSocketAddressFromBuf(msg, httpConnect);
-        log.info("Get socketAddress: {}", socketAddress);
         boolean connectRequestSent = false;
         try {
             p2SConnection = new C_Proxy2ServerConnection(proxyServerAddressEntry, this);
@@ -76,7 +73,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
             buf = crypto.encrypt(buf);
             byte[] encrypted = ProxyUtil.getBytesFromByteBuf(buf);
             ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
-                    Converter.convertInteger2ByteBigEnding(id),Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
+                    Converter.convertInteger2ByteBigEnding(id), Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
                     encrypted);
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
         } catch (Exceptions.ConnectionTimeoutException e) {
@@ -94,22 +91,32 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         return httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect");
     }
 
+    /**
+     * 注意这个方法必须通过host头来取得socket address 因为如果原本就是http连接的话 浏览器不会发送Connect请求
+     * @return socket address
+     */
     private SocketAddressEntry getSocketAddressFromBuf(ByteBuf buf, boolean tunnel) {
         buf.readerIndex(0);
         String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
         String[] strings = httpMessage.split("\n");
-        String[] host = strings[1].split(":");
-        host[1] = host[1].trim();
-        if (host.length < 3) {
-            if (tunnel) {
-                // 这里需要调用trim是因为Http报文格式: [HttpHeader]:[blank][value] 所以需要去掉多余的空格
-                return new SocketAddressEntry(host[1], (short) 443);
-            } else {
-                return new SocketAddressEntry(host[1].trim(), (short) 80);
+        for (String s : strings) {
+            if (s.length() > 4 && s.substring(0, 4).equalsIgnoreCase("Host")) {
+                String[] host = s.split(":");
+                host[1] = host[1].trim();
+                if (host.length < 3) {
+                    if (tunnel) {
+                        // 这里需要调用trim是因为Http报文格式: [HttpHeader]:[blank][value] 所以需要去掉多余的空格
+                        return new SocketAddressEntry(host[1], (short) 443);
+                    } else {
+                        return new SocketAddressEntry(host[1], (short) 80);
+                    }
+                } else if (host.length == 3) {
+                    return new SocketAddressEntry(host[1], Short.valueOf(host[2].trim()));
+                }
+                break;
             }
-        } else if (host.length == 3) {
-            return new SocketAddressEntry(host[1], Short.valueOf(host[2].trim()));
         }
+
         return null;
     }
 

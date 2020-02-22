@@ -45,7 +45,6 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.info("Channel {} is inactive,  will be closed", ProxyUtil.getRemoteAddressAndPortFromChannel(ctx));
         disconnect();
     }
 

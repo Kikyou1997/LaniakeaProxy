@@ -23,15 +23,6 @@ public class S_Client2ProxyConnection extends AbstractConnection {
 
     private Crypto crypto = null;
 
-    private static int INSTANCE_COUNT = 0;
-
-    public S_Client2ProxyConnection() {
-        INSTANCE_COUNT++;
-        log.debug("S_P instance count: {}", INSTANCE_COUNT);
-
-
-    }
-
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
         if (p2SConnection == null) {
@@ -65,7 +56,7 @@ public class S_Client2ProxyConnection extends AbstractConnection {
         var buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
         msg.readBytes(buf);
         buf = crypto.decrypt(buf);
-        log.debug("Send Data to Real Sever: {}", super.p2SConnection.writeData(buf).syncUninterruptibly().isSuccess());
+        super.p2SConnection.writeData(buf).syncUninterruptibly();
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
