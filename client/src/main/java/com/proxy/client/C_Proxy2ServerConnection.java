@@ -20,8 +20,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
 
     //private static int temp = 0;
 
+    protected static int instanceCount = 0;
+
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
+        log.info("instance count:{}", ++instanceCount);
     }
 
     @Override
@@ -46,7 +49,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);
-        bootstrap.group(new NioEventLoopGroup(1));
+        bootstrap.group(group);
         bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
@@ -61,7 +64,6 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
             }
         });
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
-        bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
         this.channel = future.channel();
         if (!future.isSuccess()) {

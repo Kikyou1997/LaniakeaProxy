@@ -2,6 +2,7 @@ package com.proxy.server;
 
 import base.AbstractProxy;
 import base.Config;
+import base.CustomizedIdleConnectionHandler;
 import base.Platform;
 import base.constants.Packets;
 import io.netty.bootstrap.ServerBootstrap;
@@ -24,15 +25,15 @@ public class ProxyServer extends AbstractProxy {
     public void start() {
         Config.loadSettings(false);
         ServerBootstrap server = new ServerBootstrap();
-        server.group(new NioEventLoopGroup(Platform.processorsNumber * 2));
+        server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
         server.childOption(ChannelOption.TCP_NODELAY, true);
-        server.childOption(ChannelOption.SO_KEEPALIVE, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline()
+                        .addLast(new CustomizedIdleConnectionHandler())
                         .addLast(new MessageProcessor("processor"))
                         .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FIELD_ID_LENGTH + Packets.FIELD_CODE_LENGTH, Packets.FIELD_LENGTH_LEN))
                         .addLast(new S_Client2ProxyConnection());

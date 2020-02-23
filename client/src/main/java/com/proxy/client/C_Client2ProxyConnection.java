@@ -28,12 +28,17 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     private boolean tunnelBuilt;
 
+    protected static int instanceCount = 0;
+
+
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
 
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
         super.id = ClientContext.id;
+        log.info("instance count:{}", ++instanceCount);
+
     }
 
     @Override
@@ -62,6 +67,10 @@ public class C_Client2ProxyConnection extends AbstractConnection {
     private boolean buildTunnel(ByteBuf msg, boolean httpConnect) {
         msg.readerIndex(0);
         SocketAddressEntry socketAddress = getSocketAddressFromBuf(msg, httpConnect);
+        if (socketAddress == null) {
+            log.debug("Not Found host");
+            return false;
+        }
         boolean connectRequestSent = false;
         try {
             p2SConnection = new C_Proxy2ServerConnection(proxyServerAddressEntry, this);
@@ -98,7 +107,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
     private SocketAddressEntry getSocketAddressFromBuf(ByteBuf buf, boolean tunnel) {
         buf.readerIndex(0);
         String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
-        String[] strings = httpMessage.split("\n");
+        String[] strings = httpMessage.split("\r\n");
         for (String s : strings) {
             if (s.length() > 4 && s.substring(0, 4).equalsIgnoreCase("Host")) {
                 String[] host = s.split(":");

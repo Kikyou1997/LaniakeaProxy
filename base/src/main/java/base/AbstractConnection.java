@@ -2,7 +2,10 @@ package base;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author kikyou
@@ -16,6 +19,7 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     protected AbstractConnection c2PConnection;
     protected AbstractConnection p2SConnection;
+    protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.processorsNumber * 2);
     protected int id;
 
 
@@ -51,14 +55,10 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
-        disconnect();
     }
 
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
         return null;
     }
 
-    public boolean isChannelActive() {
-        return channel.isActive();
-    }
 }

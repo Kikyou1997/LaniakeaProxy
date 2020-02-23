@@ -15,6 +15,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * @author kikyou
@@ -23,15 +24,22 @@ import java.net.InetAddress;
 @Slf4j
 public class S_Proxy2ServerConnection extends AbstractConnection {
 
+    protected static int instanceCount = 0;
+
+
     private final Crypto crypto = new ServerCryptoImpl(super.id);
 
-    public S_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection, int id) {
+    public S_Proxy2ServerConnection(SocketAddressEntry socketAddress, AbstractConnection c2PConnection, int id) {
+        log.info("instance count:{}", ++instanceCount);
+
         this.c2PConnection = c2PConnection;
-        ChannelFuture buildSuccess = buildConnection2Remote(entry);
+        ChannelFuture buildSuccess = buildConnection2Remote(socketAddress);
         if (buildSuccess.isSuccess()) {
+            log.debug("Build connection to {} success ", socketAddress.toString());
             super.channel = buildSuccess.channel();
         } else {
-            throw new Exceptions.ConnectionTimeoutException(entry);
+            log.debug("Build connection to {} failed ", socketAddress.toString());
+            throw new Exceptions.ConnectionTimeoutException(socketAddress);
         }
         super.id = id;
     }
@@ -56,11 +64,10 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
 
     @Override
     public ChannelFuture writeData(ByteBuf data) {
-        if (channel.isWritable()){
-            return channel.writeAndFlush(data);
-        } else {
-            throw new Exceptions.ChannelUnwritable(channel);
+        while (!channel.isWritable()) {
+            LockSupport.parkNanos(5000);
         }
+        return channel.writeAndFlush(data);
     }
 
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
@@ -68,7 +75,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);
-        bootstrap.group(new NioEventLoopGroup(1));
+        bootstrap.group(group);
         bootstrap.handler(this);
         bootstrap.option(ChannelOption.TCP_NODELAY, true);
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);

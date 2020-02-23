@@ -36,15 +36,16 @@ public class ProxyClient extends AbstractProxy {
         Config.loadSettings(true);
         getIdFromRemoteServer(Config.config.getServerAddress(), Config.config.getServerPort());
         ServerBootstrap server = new ServerBootstrap();
-        server.group(new NioEventLoopGroup(Platform.processorsNumber * 2));
+        server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
-        server.childOption(ChannelOption.SO_KEEPALIVE, true);
         server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new C_Client2ProxyConnection());
+                ch.pipeline()
+                        .addLast(new CustomizedIdleConnectionHandler())
+                        .addLast(new C_Client2ProxyConnection());
             }
         });
         server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),

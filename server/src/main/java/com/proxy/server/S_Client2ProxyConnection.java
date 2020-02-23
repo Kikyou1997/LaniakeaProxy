@@ -23,6 +23,13 @@ public class S_Client2ProxyConnection extends AbstractConnection {
 
     private Crypto crypto = null;
 
+    private static int instanceCount = 0;
+
+
+    public S_Client2ProxyConnection() {
+        log.info("instance count:{}", ++instanceCount);
+    }
+
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
         if (p2SConnection == null) {
