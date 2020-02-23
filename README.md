@@ -28,13 +28,13 @@
 
 | 报文类型  | 格式  |
 |---|---|
-| 认证请求  | `| 1 byte code | 32 bytes hash | username |`  |
-|认证请求的响应报文 |`| 1 byte code | 4 bytes id | 16 bytes iv |`|
-| 数据传输报文 |` | 1 byte req code | 4 bytes id | 4 bytes content length | encrypted data | `|
-|数据传输的响应报文 |` | 1 byte code | 4 bytes content length | encrypted data | `|
-|时钟同步请求 |`| 1 byte code |`|
-| 时钟同步的响应 |`| 1 byte code | 8 bytes value of time |`|
-| 隧道建立请求 | `| 1 byte req CONNECT code | 4 bytes id | 4 bytes content length | 若干字节的host | 2 bytes port |`|
+| 认证请求  | [ 1 byte code ][ 32 bytes hash ][ username ]  |
+|认证请求的响应报文 |[ 1 byte code ][ 4 bytes id ][ 16 bytes iv ]|
+| 数据传输报文 |[ 1 byte req code ][ 4 bytes id ][ 4 bytes content length][ encrypted data ]|
+|数据传输的响应报文 | [1 byte code ][ 4 bytes content length ][ encrypted data ]|
+|时钟同步请求 |[1 byte code ]|
+| 时钟同步的响应 |[ 1 byte code ][ 8 bytes value of time]|
+| 隧道建立请求 |[ 1 byte req CONNECT code ][ 4 bytes id ][ 4 bytes content length ][ 若干字节的host ][ 2 bytes port ]|
 
 ## 一些问题 2020-2-23
 
