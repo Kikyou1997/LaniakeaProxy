@@ -1,6 +1,5 @@
 package base;
 
-import base.constants.Packets;
 import io.netty.bootstrap.ServerBootstrap;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +26,7 @@ public abstract class AbstractProxy {
         if (config.getServerAddress() != null) {
             this.serverAddress = config.getServerAddress();
         }
-        this.bindPort = config.getBindPort();
+        this.bindPort = config.getLocalPort();
     }
 
 

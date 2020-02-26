@@ -21,7 +21,7 @@ public class CustomizedIdleConnectionHandler extends IdleStateHandler {
 
 
     public CustomizedIdleConnectionHandler() {
-        super(READ_IDLE_TIME, WRITE_IDLE_TIME, ALL_IDLE_TIME, TimeUnit.SECONDS);
+        super(READ_IDLE_TIME, WRITE_IDLE_TIME, ALL_IDLE_TIME, TimeUnit.MINUTES);
     }
 
     @Override

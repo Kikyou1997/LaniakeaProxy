@@ -3,9 +3,12 @@ package base;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.IllegalReferenceCountException;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * @author kikyou
@@ -27,15 +30,34 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         channel = ctx.channel();
         doRead(ctx, (ByteBuf) msg);
+        ((ByteBuf) msg).release(((ByteBuf) msg).refCnt());
+        ReferenceCountUtil.safeRelease(msg);
+        ctx.fireChannelRead(msg);
     }
 
     protected abstract void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
 
-    public abstract ChannelFuture writeData(ByteBuf data);
+    public ChannelFuture writeData(ByteBuf buf) {
+        int count = 0;
+        while (!channel.isWritable() && count < 32) {
+            LockSupport.parkNanos(5000);
+            count++;
+        }
+        ChannelFuture future = channel.writeAndFlush(buf).syncUninterruptibly();
+        try {
+            int refCnt = buf.refCnt();
+            ReferenceCountUtil.release(buf, refCnt);
+        } catch (IllegalReferenceCountException e) {
+            log.info("Recycle buf failed", e);
+        } finally {
+            return future;
+        }
+    }
+
 
     protected void disconnect() {
         if (p2SConnection != null) {
-            if (p2SConnection.channel != null){
+            if (p2SConnection.channel != null) {
                 p2SConnection.channel.close();
             }
         }

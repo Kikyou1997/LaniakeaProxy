@@ -49,7 +49,7 @@ public class ProxyClient extends AbstractProxy {
             }
         });
         server.bind(Config.config.getBindAddress() == null ? LOCALHOST : Config.config.getBindAddress(),
-                Config.config.getBindPort());
+                Config.config.getLocalPort());
     }
 
     private void getIdFromRemoteServer(String ip, int port) {

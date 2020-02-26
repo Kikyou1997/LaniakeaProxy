@@ -13,9 +13,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author kikyou
@@ -30,7 +33,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     protected static int instanceCount = 0;
 
-
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
 
@@ -38,18 +40,13 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         super.c2PConnection = this;
         super.id = ClientContext.id;
         log.info("instance count:{}", ++instanceCount);
-
     }
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        super.channel = ctx.channel();
-        boolean httpConnect = checkHttpHeader(msg);
-        if (httpConnect && p2SConnection != null) {
-            channel.writeAndFlush(generateHttpConnectionEstablishedResponse());
-        }
+
         if (!tunnelBuilt) {
-            tunnelBuilt = buildTunnel(msg, httpConnect);
+            tunnelBuilt = buildTunnel(msg, checkHttpHeader(msg));
             return;
         }
         if (p2SConnection != null) {
@@ -68,7 +65,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         msg.readerIndex(0);
         SocketAddressEntry socketAddress = getSocketAddressFromBuf(msg, httpConnect);
         if (socketAddress == null) {
-            log.debug("Not Found host");
             return false;
         }
         boolean connectRequestSent = false;
@@ -125,11 +121,11 @@ public class C_Client2ProxyConnection extends AbstractConnection {
                 break;
             }
         }
-
+        log.debug("No host found, original message: {}", httpMessage);
         return null;
     }
 
-    public ByteBuf generateHttpConnectionEstablishedResponse() {
+    private ByteBuf generateHttpConnectionEstablishedResponse() {
         FullHttpResponse response = new FormatHttpMessage(HttpVersion.HTTP_1_1, FormatHttpMessage.CONNECTION_ESTABLISHED);
         String s = response.toString();
         byte[] bytes = s.getBytes();
@@ -143,10 +139,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         return byteBuf;
     }
 
-    @Override
-    public ChannelFuture writeData(ByteBuf data) {
-        return channel.writeAndFlush(data);
-    }
 
 
 }

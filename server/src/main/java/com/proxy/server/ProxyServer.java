@@ -1,9 +1,6 @@
 package com.proxy.server;
 
-import base.AbstractProxy;
-import base.Config;
-import base.CustomizedIdleConnectionHandler;
-import base.Platform;
+import base.*;
 import base.constants.Packets;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -23,11 +20,11 @@ public class ProxyServer extends AbstractProxy {
 
     @Override
     public void start() {
+        System.out.println(CryptoUtil.encodeFromBytes(CryptoUtil.initKey()));
         Config.loadSettings(false);
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
-        server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override

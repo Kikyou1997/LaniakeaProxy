@@ -9,6 +9,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,14 +35,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
         msg.readBytes(buf);
         buf.readerIndex(0);
         ByteBuf decrypted = ClientContext.crypto.decrypt(buf);
+        log.debug("Dec:{} host: {}", HexDump.dump(decrypted), ProxyUtil.getRemoteAddressAndPortFromChannel(channel));
         c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
     }
 
 
-    @Override
-    public ChannelFuture writeData(ByteBuf data) {
-        return channel.writeAndFlush(data);
-    }
 
     @Override
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
@@ -75,6 +73,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
     private class TempDecoder extends LengthFieldBasedFrameDecoder{
 
         private boolean added = false;
+
         public TempDecoder() {
             super(Integer.MAX_VALUE, Packets.FIELD_CODE_LENGTH, 4);
         }

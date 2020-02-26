@@ -23,7 +23,7 @@ public class Config implements Serializable {
     private static transient HashMap<String/*用户名*/, User/*用户信息*/> userInfoMap = new HashMap<>();
 
     private String bindAddress;
-    private Integer bindPort;
+    private Integer localPort;
     private String serverAddress;
     private int serverPort;
     private String encryptionMethod;

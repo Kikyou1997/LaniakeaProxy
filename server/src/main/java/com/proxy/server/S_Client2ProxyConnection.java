@@ -72,9 +72,4 @@ public class S_Client2ProxyConnection extends AbstractConnection {
         return new SocketAddressEntry(host, port);
     }
 
-
-    @Override
-    public ChannelFuture writeData(ByteBuf data) {
-        return channel.writeAndFlush(data);
-    }
 }
