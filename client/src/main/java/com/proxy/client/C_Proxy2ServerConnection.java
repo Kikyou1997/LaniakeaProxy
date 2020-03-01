@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> implements Cloneable{
+public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> {
 
     //private static int temp = 0;
 
@@ -29,8 +29,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
         ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
-        log.debug("Dec:{} host: {}", HexDump.dump(decrypted), ProxyUtil.getRemoteAddressAndPortFromChannel(channel));
-        c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
+        c2PConnection.writeData(decrypted);
     }
 
 
@@ -59,7 +58,6 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
         });
         //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
-        this.channel = future.channel();
         if (!future.isSuccess()) {
             this.channel.close();
         }
