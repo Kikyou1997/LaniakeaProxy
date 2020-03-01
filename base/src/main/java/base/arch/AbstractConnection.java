@@ -17,7 +17,9 @@ import java.util.concurrent.locks.LockSupport;
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter {
+public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
+
+{
 
     protected Channel channel;
     protected ChannelHandlerContext ctx;

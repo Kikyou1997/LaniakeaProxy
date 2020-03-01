@@ -14,9 +14,13 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> {
+public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> implements Cloneable{
 
     //private static int temp = 0;
+
+
+    public C_Proxy2ServerConnection() {
+    }
 
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
@@ -43,11 +47,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
                 try {
 
                     ch.pipeline()
-                            .addLast(new TempDecoder())
+                            .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 5, 4))
                             .addLast(new DataTransmissionPacketDecoder())
+                            .addLast(C_Proxy2ServerConnection.this)
+
                             .addLast(new DataTransmissionPacketEncoder());
-                    //log.info("Fuck {}", temp++)
-                    //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -60,24 +64,6 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
             this.channel.close();
         }
         return future;
-    }
-
-    private class TempDecoder extends LengthFieldBasedFrameDecoder {
-
-        private boolean added = false;
-
-        public TempDecoder() {
-            super(Integer.MAX_VALUE, 5, 4);
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (!added) {
-                ctx.pipeline().addLast(C_Proxy2ServerConnection.this);
-                added = true;
-            }
-            super.channelRead(ctx, msg);
-        }
     }
 
 }

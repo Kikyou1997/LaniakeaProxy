@@ -127,6 +127,4 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
         return byteBuf;
     }
 
-
-
 }

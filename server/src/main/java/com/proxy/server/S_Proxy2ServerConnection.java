@@ -60,7 +60,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline()
-                        .addLast(new DoNothingHandler());
+                        .addLast(S_Proxy2ServerConnection.this);
             }
         });
         //bootstrap.option(ChannelOption.TCP_NODELAY, true);
@@ -75,17 +75,5 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         channel.close();
     }
 
-    private class DoNothingHandler extends ChannelInboundHandlerAdapter {
-        private boolean added;
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (!added) {
-                ctx.pipeline().addLast(S_Proxy2ServerConnection.this);
-                added = true;
-            }
-            super.channelRead(ctx, msg);
-        }
-    }
 
 }
