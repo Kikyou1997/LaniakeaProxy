@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kikyou
  * Created at 2020/2/1
  */
+@Slf4j
 @ChannelHandler.Sharable
 public class MessageProcessor extends ChannelInboundHandlerAdapter {
 
@@ -50,14 +52,6 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
 
     public static byte getRequestCode(ByteBuf msg) {
         return msg.readByte();
-    }
-
-    private void removeRedundantHeader(ByteBuf buf) {
-        buf.readerIndex(HEADER_LENGTH);
-        byte[] msg = new byte[buf.readableBytes()];
-        buf.readBytes(msg);
-        buf.clear();
-        buf.writeBytes(msg);
     }
 
 }

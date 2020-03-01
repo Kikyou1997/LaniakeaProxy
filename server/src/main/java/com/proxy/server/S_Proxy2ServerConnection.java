@@ -41,7 +41,9 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
     }
 
     private void sendData2Client(ByteBuf msg) {
-        log.debug("Origin: {} from host {}", HexDump.dump(msg), ProxyUtil.getLocalAddressAndPortFromChannel(channel));
+        log.debug("Host {} Size {} ", ProxyUtil.getLocalAddressAndPortFromChannel(channel), msg.readableBytes()
+
+        );
         ByteBuf encrypted = crypto.encrypt(msg);
         encrypted.readerIndex(0);
         LaniakeaPacket packet = new LaniakeaPacket(ResponseCode.DATA_TRANS_RESP, super.id, encrypted.readableBytes(), encrypted);
@@ -56,18 +58,15 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.group(group);
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline()
-                        .addLast(new DoNothingHandler());
+                        .addLast(S_Proxy2ServerConnection.this);
             }
         });
         //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         //bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
-        ChannelFuture future = bootstrap.connect(ip, (int) port);
-        future.syncUninterruptibly();
-        return future;
+        return bootstrap.connect(ip, (int) port).syncUninterruptibly();
     }
 
     @Override
@@ -75,17 +74,5 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         channel.close();
     }
 
-    private class DoNothingHandler extends ChannelInboundHandlerAdapter {
-        private boolean added;
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (!added) {
-                ctx.pipeline().addLast(S_Proxy2ServerConnection.this);
-                added = true;
-            }
-            super.channelRead(ctx, msg);
-        }
-    }
 
 }

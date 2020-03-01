@@ -18,6 +18,10 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
 
     //private static int temp = 0;
 
+
+    public C_Proxy2ServerConnection() {
+    }
+
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
     }
@@ -25,8 +29,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
         ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
-        log.debug("Dec:{} host: {}", HexDump.dump(decrypted), ProxyUtil.getRemoteAddressAndPortFromChannel(channel));
-        c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
+        c2PConnection.writeData(decrypted);
     }
 
 
@@ -43,11 +46,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
                 try {
 
                     ch.pipeline()
-                            .addLast(new TempDecoder())
+                            .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 5, 4))
                             .addLast(new DataTransmissionPacketDecoder())
+                            .addLast(C_Proxy2ServerConnection.this)
+
                             .addLast(new DataTransmissionPacketEncoder());
-                    //log.info("Fuck {}", temp++)
-                    //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -55,29 +58,10 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
         });
         //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
-        this.channel = future.channel();
         if (!future.isSuccess()) {
             this.channel.close();
         }
         return future;
-    }
-
-    private class TempDecoder extends LengthFieldBasedFrameDecoder {
-
-        private boolean added = false;
-
-        public TempDecoder() {
-            super(Integer.MAX_VALUE, 5, 4);
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (!added) {
-                ctx.pipeline().addLast(C_Proxy2ServerConnection.this);
-                added = true;
-            }
-            super.channelRead(ctx, msg);
-        }
     }
 
 }
