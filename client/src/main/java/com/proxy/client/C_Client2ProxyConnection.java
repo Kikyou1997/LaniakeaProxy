@@ -22,7 +22,7 @@ import java.sql.Ref;
  * Created at 2020/1/29
  */
 @Slf4j
-public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
+public class C_Client2ProxyConnection extends AbstractConnection {
 
     private Crypto crypto = ClientContext.crypto;
 
@@ -45,8 +45,12 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.DATA_TRANS_REQ, id, encrypted.readableBytes(), encrypted);
-           p2SConnection.writeData(packet);
+            var buf = ctx.alloc().buffer();
+            buf.writeByte(RequestCode.DATA_TRANS_REQ);
+            buf.writeInt(id);
+            buf.writeInt(encrypted.readableBytes());
+            buf.writeBytes(encrypted);
+            boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
         }
     }
 

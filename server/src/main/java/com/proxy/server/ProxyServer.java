@@ -33,8 +33,6 @@ public class ProxyServer extends AbstractProxy {
                         .addLast(new CustomizedIdleConnectionHandler())
                         .addLast(messageProcessor)
                         .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FIELD_ID_LENGTH + Packets.FIELD_CODE_LENGTH, Packets.FIELD_LENGTH_LEN))
-                        .addLast(new DataTransmissionPacketEncoder())
-                        .addLast(new DataTransmissionPacketDecoder())
                         .addLast(new S_Client2ProxyConnection());
             }
         });

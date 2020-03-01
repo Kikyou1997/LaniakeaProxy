@@ -9,7 +9,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class LaniakeaPacket {
+public class LaniakeaPakcet {
 
     private byte code;
     private int id;

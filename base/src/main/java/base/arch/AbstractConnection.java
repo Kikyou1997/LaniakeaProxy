@@ -1,12 +1,16 @@
 package base.arch;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.EmptyByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.locks.LockSupport;
 
 
 /**
@@ -14,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter {
+public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
     protected ChannelHandlerContext ctx;
@@ -36,18 +40,34 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
         super.channelRegistered(ctx);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        doRead(ctx, (V) msg);
+        this.channel = ctx.channel();
+        this.ctx = ctx;
+        doRead(ctx, (ByteBuf) msg);
+        ((ByteBuf) msg).release(((ByteBuf) msg).refCnt());
+        ReferenceCountUtil.safeRelease(msg);
         ctx.fireChannelRead(msg);
         ReferenceCountUtil.safeRelease(msg);
     }
 
-    protected abstract void doRead(ChannelHandlerContext ctx, V msg) throws Exception;
+    protected abstract void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
 
-    public ChannelFuture writeData(Object msg) {
-        return channel.writeAndFlush(msg);
+    public ChannelFuture writeData(ByteBuf buf) {
+        int count = 0;
+        while (!channel.isWritable() && count < 32) {
+            LockSupport.parkNanos(5000);
+            count++;
+        }
+        ChannelFuture future = channel.writeAndFlush(buf).syncUninterruptibly();
+        try {
+            int refCnt = buf.refCnt();
+            ReferenceCountUtil.release(buf, refCnt);
+        } catch (IllegalReferenceCountException e) {
+            log.info("Recycle buf failed", e);
+        } finally {
+            return future;
+        }
     }
 
     protected void disconnect() {

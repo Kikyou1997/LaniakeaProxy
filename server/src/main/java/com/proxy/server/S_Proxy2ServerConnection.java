@@ -1,7 +1,6 @@
 package com.proxy.server;
 
 import base.arch.*;
-import base.constants.RequestCode;
 import base.constants.ResponseCode;
 import base.interfaces.Crypto;
 import io.netty.bootstrap.Bootstrap;
@@ -16,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
+public class S_Proxy2ServerConnection extends AbstractConnection {
 
 
     private final Crypto crypto = new ServerCryptoImpl(super.id);
@@ -46,8 +45,13 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         );
         ByteBuf encrypted = crypto.encrypt(msg);
         encrypted.readerIndex(0);
-        LaniakeaPacket packet = new LaniakeaPacket(ResponseCode.DATA_TRANS_RESP, super.id, encrypted.readableBytes(), encrypted);
-        c2PConnection.writeData(packet);
+        int length = encrypted.readableBytes();
+        ByteBuf finalData = ctx.alloc().buffer(length);
+        finalData
+                .writeByte(ResponseCode.DATA_TRANS_RESP)
+                .writeInt(length)
+                .writeBytes(encrypted);
+        c2PConnection.writeData(finalData);
     }
 
     @Override
