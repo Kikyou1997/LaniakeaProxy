@@ -1,6 +1,5 @@
-package base;
+package base.arch;
 
-import base.constants.Packets;
 import base.constants.ResponseCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;

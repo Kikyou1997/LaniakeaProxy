@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import base.constants.Packets;
 import base.constants.RequestCode;

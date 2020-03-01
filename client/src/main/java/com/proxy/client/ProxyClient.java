@@ -1,6 +1,6 @@
 package com.proxy.client;
 
-import base.*;
+import base.arch.*;
 import base.constants.Packets;
 import base.constants.RequestCode;
 import base.constants.ResponseCode;
@@ -38,7 +38,7 @@ public class ProxyClient extends AbstractProxy {
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
-        server.childOption(ChannelOption.TCP_NODELAY, true);
+        //server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override
@@ -72,6 +72,10 @@ public class ProxyClient extends AbstractProxy {
                         log.info(" Id received : {} Iv received: {}", id, iv);
                         ClientContext.initContext(id, iv);
                         ctx.close();
+                        break;
+                    default:
+                        //do nothing
+                        break;
                 }
             }
         });

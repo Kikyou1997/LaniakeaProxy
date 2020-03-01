@@ -1,7 +1,7 @@
 package com.proxy.client;
 
-import base.Config;
-import base.CryptoUtil;
+import base.arch.Config;
+import base.arch.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

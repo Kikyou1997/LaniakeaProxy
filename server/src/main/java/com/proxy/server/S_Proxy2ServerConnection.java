@@ -1,21 +1,14 @@
 package com.proxy.server;
 
-import base.*;
-import base.constants.Packets;
+import base.arch.*;
 import base.constants.ResponseCode;
 import base.interfaces.Crypto;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.*;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
-
-import java.net.InetAddress;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * @author kikyou
@@ -24,13 +17,10 @@ import java.util.concurrent.locks.LockSupport;
 @Slf4j
 public class S_Proxy2ServerConnection extends AbstractConnection {
 
-    protected static int instanceCount = 0;
-
 
     private final Crypto crypto = new ServerCryptoImpl(super.id);
 
     public S_Proxy2ServerConnection(SocketAddressEntry socketAddress, AbstractConnection c2PConnection, int id) {
-        log.info("instance count:{}", ++instanceCount);
 
         this.c2PConnection = c2PConnection;
         ChannelFuture buildSuccess = buildConnection2Remote(socketAddress);
@@ -54,7 +44,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
         ByteBuf encrypted = crypto.encrypt(msg);
         encrypted.readerIndex(0);
         int length = encrypted.readableBytes();
-        ByteBuf finalData = PooledByteBufAllocator.DEFAULT.buffer(length);
+        ByteBuf finalData = ctx.alloc().buffer(length);
         finalData
                 .writeByte(ResponseCode.DATA_TRANS_RESP)
                 .writeInt(length)
@@ -62,16 +52,23 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
         c2PConnection.writeData(finalData);
     }
 
-
+    @Override
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
         String ip = socketAddress.getHost();
         short port = socketAddress.getPort();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.group(group);
-        bootstrap.handler(this);
-        bootstrap.option(ChannelOption.TCP_NODELAY, true);
-        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
+        bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline()
+                        .addLast(new DoNothingHandler());
+            }
+        });
+        //bootstrap.option(ChannelOption.TCP_NODELAY, true);
+        //bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIME_OUT);
         ChannelFuture future = bootstrap.connect(ip, (int) port);
         future.syncUninterruptibly();
         return future;
@@ -82,5 +79,17 @@ public class S_Proxy2ServerConnection extends AbstractConnection {
         channel.close();
     }
 
+    private class DoNothingHandler extends ChannelInboundHandlerAdapter {
+        private boolean added;
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (!added) {
+                ctx.pipeline().addLast(S_Proxy2ServerConnection.this);
+                added = true;
+            }
+            super.channelRead(ctx, msg);
+        }
+    }
 
 }

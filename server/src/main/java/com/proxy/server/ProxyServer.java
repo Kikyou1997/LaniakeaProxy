@@ -1,16 +1,15 @@
 package com.proxy.server;
 
-import base.*;
+import base.arch.*;
 import base.constants.Packets;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
-import static base.Config.config;
+import static base.arch.Config.config;
 
 /**
  * @author kikyou
@@ -29,9 +28,10 @@ public class ProxyServer extends AbstractProxy {
 
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
+                MessageProcessor messageProcessor = new MessageProcessor();
                 ch.pipeline()
                         .addLast(new CustomizedIdleConnectionHandler())
-                        .addLast(new MessageProcessor("processor"))
+                        .addLast(messageProcessor)
                         .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, Packets.FIELD_ID_LENGTH + Packets.FIELD_CODE_LENGTH, Packets.FIELD_LENGTH_LEN))
                         .addLast(new S_Client2ProxyConnection());
             }

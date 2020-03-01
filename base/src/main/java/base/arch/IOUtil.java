@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -34,7 +34,7 @@ public class IOUtil {
 
     public static String readFromConfigFile(String filePath) throws IOException {
         String config = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
-        log.info("base.Config:" + config);
+        log.info("base.arch.Config:" + config);
         return config;
     }
 

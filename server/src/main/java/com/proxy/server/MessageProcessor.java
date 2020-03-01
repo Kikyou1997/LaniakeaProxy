@@ -2,7 +2,7 @@ package com.proxy.server;
 
 import static base.constants.RequestCode.*;
 
-import base.MessageGenerator;
+import base.arch.MessageGenerator;
 import base.constants.Packets;
 import base.interfaces.Handler;
 import io.netty.buffer.ByteBuf;
@@ -19,13 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kikyou
  * Created at 2020/2/1
  */
+@ChannelHandler.Sharable
 public class MessageProcessor extends ChannelInboundHandlerAdapter {
-
-    private String handlerName;
-
-    public MessageProcessor(String handlerName) {
-        this.handlerName = handlerName;
-    }
 
     private Map<Byte, Handler> byteHandlerMap = new ConcurrentHashMap<>();
     private static final int HEADER_LENGTH = Packets.FIELD_CODE_LENGTH + Packets.FIELD_ID_LENGTH + Packets.FIELD_LENGTH_LEN;

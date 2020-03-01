@@ -1,6 +1,5 @@
-package base;
+package base.arch;
 
-import base.ProxyUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;

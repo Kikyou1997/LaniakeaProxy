@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import io.netty.bootstrap.ServerBootstrap;
 import lombok.extern.slf4j.Slf4j;

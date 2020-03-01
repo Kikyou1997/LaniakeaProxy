@@ -1,24 +1,18 @@
 package com.proxy.client;
 
-import base.*;
-
+import base.arch.*;
 import base.constants.Packets;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author kikyou
@@ -31,7 +25,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     private boolean tunnelBuilt;
 
-    protected static int instanceCount = 0;
 
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
@@ -39,7 +32,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
         super.id = ClientContext.id;
-        log.info("instance count:{}", ++instanceCount);
     }
 
     @Override
@@ -52,7 +44,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            var buf = PooledByteBufAllocator.DEFAULT.buffer();
+            var buf = ctx.alloc().buffer();
             buf.writeByte(RequestCode.DATA_TRANS_REQ);
             buf.writeInt(id);
             buf.writeInt(encrypted.readableBytes());
@@ -72,7 +64,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
             p2SConnection = new C_Proxy2ServerConnection(proxyServerAddressEntry, this);
             p2SConnection.buildConnection2Remote(proxyServerAddressEntry);
             byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
-            ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
+            ByteBuf buf = ctx.alloc().buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
             buf.writeBytes(hostBytes);
             buf.writeShort(socketAddress.getPort());
             buf = crypto.encrypt(buf);
@@ -129,7 +121,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         FullHttpResponse response = new FormatHttpMessage(HttpVersion.HTTP_1_1, FormatHttpMessage.CONNECTION_ESTABLISHED);
         String s = response.toString();
         byte[] bytes = s.getBytes();
-        ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.buffer();
+        ByteBuf byteBuf =ctx.alloc().buffer();
         byteBuf.writeBytes(bytes);
         short crlf = (HttpConstants.CR << 8) | HttpConstants.LF;
         //write crlf to end line

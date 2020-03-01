@@ -1,6 +1,6 @@
 package com.proxy.server;
 
-import base.*;
+import base.arch.*;
 import base.constants.Packets;
 import base.constants.ResponseCode;
 import base.interfaces.Auth;

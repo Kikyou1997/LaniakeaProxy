@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 /**
  * @author kikyou

@@ -1,15 +1,12 @@
 package com.proxy.client;
 
-import base.*;
+import base.arch.*;
 import base.constants.Packets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -21,16 +18,13 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
 
     //private static int temp = 0;
 
-    protected static int instanceCount = 0;
-
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
-        log.info("instance count:{}", ++instanceCount);
     }
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes() - Packets.HEADERS_DATA_RESP_LEN);
+        ByteBuf buf =  ctx.alloc().buffer(msg.readableBytes() - Packets.HEADERS_DATA_RESP_LEN);
         msg.readerIndex(Packets.HEADERS_DATA_RESP_LEN);
         msg.readBytes(buf);
         buf.readerIndex(0);
@@ -53,7 +47,8 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
             protected void initChannel(NioSocketChannel ch) throws Exception {
                 try {
 
-                    ch.pipeline().addLast(new TempDecoder());
+                    ch.pipeline().addLast(new TempDecoder())
+                            .addLast(new DataTransmissionPacketEncoder());
                     //log.info("Fuck {}", temp++)
                     //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
                 } catch (Exception e) {
@@ -61,7 +56,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
                 }
             }
         });
-        bootstrap.option(ChannelOption.TCP_NODELAY, true);
+        //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
         this.channel = future.channel();
         if (!future.isSuccess()) {

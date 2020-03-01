@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,13 +1,15 @@
-package base;
+package base.arch;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.EmptyByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.IllegalReferenceCountException;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -18,6 +20,7 @@ import java.util.concurrent.locks.LockSupport;
 public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
+    protected ChannelHandlerContext ctx;
     protected static int CONNECT_TIME_OUT = 2000;
 
     protected AbstractConnection c2PConnection;
@@ -28,7 +31,8 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        channel = ctx.channel();
+        this.channel = ctx.channel();
+        this.ctx = ctx;
         doRead(ctx, (ByteBuf) msg);
         ((ByteBuf) msg).release(((ByteBuf) msg).refCnt());
         ReferenceCountUtil.safeRelease(msg);
@@ -54,18 +58,26 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
         }
     }
 
-
     protected void disconnect() {
         if (p2SConnection != null) {
-            if (p2SConnection.channel != null) {
-                p2SConnection.channel.close();
-            }
+            closeConnection(p2SConnection);
         }
         if (c2PConnection != null) {
-            if (c2PConnection.channel != null) {
-                c2PConnection.channel.close();
-            }
+            closeConnection(c2PConnection);
         }
+    }
+
+    private void closeConnection(AbstractConnection connection) {
+        Channel c = connection.channel;
+        if (c != null) {
+            c.writeAndFlush(new EmptyByteBuf(channel.alloc())).addListener(new GenericFutureListener<Future<? super Void>>() {
+                @Override
+                public void operationComplete(Future<? super Void> future) throws Exception {
+                    p2SConnection.channel.close();
+                }
+            });
+        }
+
     }
 
 
@@ -77,6 +89,7 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         cause.printStackTrace();
+        disconnect();
     }
 
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {

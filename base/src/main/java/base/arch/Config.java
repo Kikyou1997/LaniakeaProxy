@@ -1,10 +1,8 @@
-package base;
+package base.arch;
 
-import base.interfaces.Crypto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;

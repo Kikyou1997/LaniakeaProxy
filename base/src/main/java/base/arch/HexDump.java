@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import io.netty.buffer.ByteBuf;
 
@@ -36,8 +36,10 @@ public class HexDump {
                     sb.append('\t');
             }
             int value = (int)(b[i + offset]) & 0xFF;
-            sb.append(hex[(value >> 4)]);// store the value of four digits high
-            sb.append(hex[(value & 0xF)]);// store the value of four digits low
+            // store the value of four digits high
+            sb.append(hex[(value >> 4)]);
+            // store the value of four digits low
+            sb.append(hex[(value & 0xF)]);
             sb.append(' ');
         }
         sb.append('\n');

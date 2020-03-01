@@ -1,4 +1,4 @@
-package base;
+package base.arch;
 
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
