@@ -6,38 +6,37 @@ import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.Ref;
 
 /**
  * @author kikyou
  * Created at 2020/1/29
  */
 @Slf4j
-public class C_Client2ProxyConnection extends AbstractConnection {
+public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
     private Crypto crypto = ClientContext.crypto;
 
     private boolean tunnelBuilt;
 
+
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
+
 
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
         super.id = ClientContext.id;
     }
 
-
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
+
         if (!tunnelBuilt) {
             tunnelBuilt = buildTunnel(msg, checkHttpHeader(msg));
             return;
@@ -45,12 +44,8 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            var buf = ctx.alloc().buffer();
-            buf.writeByte(RequestCode.DATA_TRANS_REQ);
-            buf.writeInt(id);
-            buf.writeInt(encrypted.readableBytes());
-            buf.writeBytes(encrypted);
-            boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
+            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.DATA_TRANS_REQ, id, encrypted.readableBytes(), encrypted);
+            boolean r = p2SConnection.writeData(packet).syncUninterruptibly().isSuccess();
         }
     }
 
@@ -74,7 +69,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
                     Converter.convertInteger2ByteBigEnding(id), Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
                     encrypted);
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
-            ReferenceCountUtil.safeRelease(buf);
         } catch (Exceptions.ConnectionTimeoutException e) {
             log.error("Connect to remote proxy server timeout", e);
         }
@@ -87,7 +81,6 @@ public class C_Client2ProxyConnection extends AbstractConnection {
 
     private boolean checkHttpHeader(ByteBuf buf) {
         String httpMessage = buf.readCharSequence(buf.readableBytes(), StandardCharsets.US_ASCII).toString();
-        buf.readerIndex(0);
         return httpMessage.startsWith("Connect") || httpMessage.startsWith("CONNECT") || httpMessage.startsWith("connect");
     }
 
@@ -133,5 +126,7 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         ByteBufUtil.writeShortBE(byteBuf, crlf);
         return byteBuf;
     }
+
+
 
 }

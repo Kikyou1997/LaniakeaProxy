@@ -1,13 +1,13 @@
 package com.proxy.server;
 
 import base.arch.AbstractConnection;
+import base.arch.LaniakeaPacket;
 import base.arch.SocketAddressEntry;
 import base.constants.Packets;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
  * Created at 2020/1/29
  */
 @Slf4j
-public class S_Client2ProxyConnection extends AbstractConnection {
+public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket> {
 
     private int id;
 
@@ -26,39 +26,33 @@ public class S_Client2ProxyConnection extends AbstractConnection {
 
 
     @Override
-    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) {
+    protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) {
         if (p2SConnection == null) {
             buildConnection2RealServer(msg);
             return;
         }
-        msg.readerIndex(0);
-        if (msg.readByte() == RequestCode.DATA_TRANS_REQ) {
-            msg.readerIndex(0);
-            decryptDataAndSend(msg);
+        if (msg.getCode() == RequestCode.DATA_TRANS_REQ) {
+            decryptDataAndSend(msg.getContent());
         }
     }
 
-    private void buildConnection2RealServer(ByteBuf msg) {
-        msg.readerIndex(0);
-        byte code = msg.readByte();
-        this.id = msg.readInt();
-        int length = msg.readInt();
+    private void buildConnection2RealServer(LaniakeaPacket msg) {
+        byte code = msg.getCode();
+        this.id = msg.getId();
+        int length = msg.getLength();
         crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
-            ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(msg.readableBytes());
-            msg.readBytes(buf);
-            buf = crypto.decrypt(buf);
+            var buf = crypto.decrypt(msg.getContent());
             SocketAddressEntry socketAddress = getHostFromBuf(buf);
             super.p2SConnection = new S_Proxy2ServerConnection(socketAddress, this, id);
         }
     }
 
     private void decryptDataAndSend(ByteBuf msg) {
-        msg.readerIndex(Packets.HEADERS_DATA_REQ_LEN);
         var buf = ctx.alloc().buffer(msg.readableBytes());
         msg.readBytes(buf);
         buf = crypto.decrypt(buf);
-        super.p2SConnection.writeData(buf);
+        super.p2SConnection.writeData(buf).syncUninterruptibly();
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {

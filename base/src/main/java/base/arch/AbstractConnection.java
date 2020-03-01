@@ -12,13 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.locks.LockSupport;
 
-
 /**
  * @author kikyou
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
+public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
     protected ChannelHandlerContext ctx;
@@ -29,55 +28,45 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.processorsNumber * 2);
     protected int id;
 
-    public AbstractConnection() {
-    }
 
-
-    @Override
-    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        this.ctx = ctx;
-        this.channel = ctx.channel();
-        super.channelRegistered(ctx);
-    }
-
+    @SuppressWarnings("unchecked")
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         this.channel = ctx.channel();
         this.ctx = ctx;
-        doRead(ctx, (ByteBuf) msg);
-        ((ByteBuf) msg).release(((ByteBuf) msg).refCnt());
+        doRead(ctx, (V)msg);
         ReferenceCountUtil.safeRelease(msg);
         ctx.fireChannelRead(msg);
-        ReferenceCountUtil.safeRelease(msg);
     }
 
-    protected abstract void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
+    protected abstract void doRead(ChannelHandlerContext ctx, V msg) throws Exception;
 
-    public ChannelFuture writeData(ByteBuf buf) {
-        int count = 0;
-        while (!channel.isWritable() && count < 32) {
-            LockSupport.parkNanos(5000);
-            count++;
-        }
-        ChannelFuture future = channel.writeAndFlush(buf).syncUninterruptibly();
-        try {
-            int refCnt = buf.refCnt();
-            ReferenceCountUtil.release(buf, refCnt);
-        } catch (IllegalReferenceCountException e) {
-            log.info("Recycle buf failed", e);
-        } finally {
-            return future;
-        }
+    public ChannelFuture writeData(Object msg) {
+        return channel.writeAndFlush(msg);
     }
 
     protected void disconnect() {
-        if (p2SConnection != null && p2SConnection.channel != null){
-            p2SConnection.channel.close();
+        if (p2SConnection != null) {
+            closeConnection(p2SConnection);
         }
-        if (c2PConnection != null && c2PConnection.channel != null) {
-            c2PConnection.channel.close();
+        if (c2PConnection != null) {
+            closeConnection(c2PConnection);
         }
     }
+
+    private void closeConnection(AbstractConnection connection) {
+        Channel c = connection.channel;
+        if (c != null) {
+            c.writeAndFlush(new EmptyByteBuf(channel.alloc())).addListener(new GenericFutureListener<Future<? super Void>>() {
+                @Override
+                public void operationComplete(Future<? super Void> future) throws Exception {
+                    p2SConnection.channel.close();
+                }
+            });
+        }
+
+    }
+
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -86,7 +75,7 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("Error", cause);
+        cause.printStackTrace();
         disconnect();
     }
 
