@@ -3,7 +3,6 @@ package base.arch;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.MessageToMessageDecoder;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public class DataTransmissionPacketDecoder extends ByteToMessageDecoder {
         int length = in.readInt();
         ByteBuf content = ctx.alloc().buffer(length);
         in.readBytes(content);
-        LaniakeaPakcet packet = new LaniakeaPakcet(code, id, length, content);
+        LaniakeaPacket packet = new LaniakeaPacket(code, id, length, content);
         out.add(packet);
     }
 }

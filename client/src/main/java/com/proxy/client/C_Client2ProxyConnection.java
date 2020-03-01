@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
  * Created at 2020/1/29
  */
 @Slf4j
-public class C_Client2ProxyConnection extends AbstractConnection {
+public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
     private Crypto crypto = ClientContext.crypto;
 
@@ -44,12 +44,8 @@ public class C_Client2ProxyConnection extends AbstractConnection {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            var buf = ctx.alloc().buffer();
-            buf.writeByte(RequestCode.DATA_TRANS_REQ);
-            buf.writeInt(id);
-            buf.writeInt(encrypted.readableBytes());
-            buf.writeBytes(encrypted);
-            boolean r = p2SConnection.writeData(buf).syncUninterruptibly().isSuccess();
+            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.DATA_TRANS_REQ, id, encrypted.readableBytes(), encrypted);
+            boolean r = p2SConnection.writeData(packet).syncUninterruptibly().isSuccess();
         }
     }
 

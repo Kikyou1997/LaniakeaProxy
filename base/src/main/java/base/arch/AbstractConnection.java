@@ -17,7 +17,7 @@ import java.util.concurrent.locks.LockSupport;
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
+public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter {
 
     protected Channel channel;
     protected ChannelHandlerContext ctx;
@@ -29,33 +29,20 @@ public abstract class AbstractConnection extends ChannelInboundHandlerAdapter {
     protected int id;
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         this.channel = ctx.channel();
         this.ctx = ctx;
-        doRead(ctx, (ByteBuf) msg);
-        ((ByteBuf) msg).release(((ByteBuf) msg).refCnt());
+        doRead(ctx, (V)msg);
         ReferenceCountUtil.safeRelease(msg);
         ctx.fireChannelRead(msg);
     }
 
-    protected abstract void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception;
+    protected abstract void doRead(ChannelHandlerContext ctx, V msg) throws Exception;
 
-    public ChannelFuture writeData(ByteBuf buf) {
-        int count = 0;
-        while (!channel.isWritable() && count < 32) {
-            LockSupport.parkNanos(5000);
-            count++;
-        }
-        ChannelFuture future = channel.writeAndFlush(buf).syncUninterruptibly();
-        try {
-            int refCnt = buf.refCnt();
-            ReferenceCountUtil.release(buf, refCnt);
-        } catch (IllegalReferenceCountException e) {
-            log.info("Recycle buf failed", e);
-        } finally {
-            return future;
-        }
+    public ChannelFuture writeData(Object msg) {
+        return channel.writeAndFlush(msg);
     }
 
     protected void disconnect() {

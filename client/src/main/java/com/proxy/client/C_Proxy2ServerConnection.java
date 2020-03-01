@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public class C_Proxy2ServerConnection extends AbstractConnection {
+public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> {
 
     //private static int temp = 0;
 
@@ -23,16 +23,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
     }
 
     @Override
-    protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
-        ByteBuf buf =  ctx.alloc().buffer(msg.readableBytes() - Packets.HEADERS_DATA_RESP_LEN);
-        msg.readerIndex(Packets.HEADERS_DATA_RESP_LEN);
-        msg.readBytes(buf);
-        buf.readerIndex(0);
-        ByteBuf decrypted = ClientContext.crypto.decrypt(buf);
+    protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
+        ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
         log.debug("Dec:{} host: {}", HexDump.dump(decrypted), ProxyUtil.getRemoteAddressAndPortFromChannel(channel));
         c2PConnection.writeData(decrypted).syncUninterruptibly().isSuccess();
     }
-
 
 
     @Override
@@ -47,7 +42,9 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
             protected void initChannel(NioSocketChannel ch) throws Exception {
                 try {
 
-                    ch.pipeline().addLast(new TempDecoder())
+                    ch.pipeline()
+                            .addLast(new TempDecoder())
+                            .addLast(new DataTransmissionPacketDecoder())
                             .addLast(new DataTransmissionPacketEncoder());
                     //log.info("Fuck {}", temp++)
                     //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
@@ -65,12 +62,12 @@ public class C_Proxy2ServerConnection extends AbstractConnection {
         return future;
     }
 
-    private class TempDecoder extends LengthFieldBasedFrameDecoder{
+    private class TempDecoder extends LengthFieldBasedFrameDecoder {
 
         private boolean added = false;
 
         public TempDecoder() {
-            super(Integer.MAX_VALUE, Packets.FIELD_CODE_LENGTH, 4);
+            super(Integer.MAX_VALUE, 5, 4);
         }
 
         @Override
