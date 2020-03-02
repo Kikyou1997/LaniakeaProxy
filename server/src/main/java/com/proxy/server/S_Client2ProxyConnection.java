@@ -52,7 +52,7 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
         var buf = ctx.alloc().buffer(msg.readableBytes());
         msg.readBytes(buf);
         buf = crypto.decrypt(buf);
-        super.p2SConnection.writeData(buf).syncUninterruptibly();
+        super.p2SConnection.writeData(buf);
     }
 
     private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
