@@ -38,7 +38,7 @@ public class ProxyClient extends AbstractProxy {
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
-        //server.childOption(ChannelOption.TCP_NODELAY, true);
+        server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override

@@ -1,7 +1,6 @@
 package com.proxy.client;
 
 import base.arch.*;
-import base.constants.Packets;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -29,6 +28,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
         ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
+
         c2PConnection.writeData(decrypted);
     }
 
@@ -48,9 +48,10 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
                     ch.pipeline()
                             .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 5, 4))
                             .addLast(new DataTransmissionPacketDecoder())
-                            .addLast(C_Proxy2ServerConnection.this)
-
-                            .addLast(new DataTransmissionPacketEncoder());
+                            .addLast(new DataTransmissionPacketEncoder())
+                            .addLast(C_Proxy2ServerConnection.this);
+                    //log.info("Fuck {}", temp++)
+                    //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -63,5 +64,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
         }
         return future;
     }
+
+
 
 }

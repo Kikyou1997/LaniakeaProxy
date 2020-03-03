@@ -4,6 +4,7 @@ import base.arch.*;
 import base.constants.Packets;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -24,6 +25,7 @@ public class ProxyServer extends AbstractProxy {
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
         server.channel(NioServerSocketChannel.class);
+        server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
 
             @Override
