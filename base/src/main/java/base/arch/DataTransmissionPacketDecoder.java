@@ -3,7 +3,6 @@ package base.arch;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.util.ReferenceCountUtil;
 
 import java.util.List;
 
@@ -20,6 +19,5 @@ public class DataTransmissionPacketDecoder extends ByteToMessageDecoder {
         in.readBytes(content);
         LaniakeaPacket packet = new LaniakeaPacket(code, id, length, content);
         out.add(packet);
-        ReferenceCountUtil.safeRelease(in);
     }
 }

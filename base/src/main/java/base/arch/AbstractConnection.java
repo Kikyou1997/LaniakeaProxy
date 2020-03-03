@@ -1,11 +1,8 @@
 package base.arch;
 
-import io.netty.buffer.EmptyByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -21,7 +18,7 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
 
     protected AbstractConnection c2PConnection;
     protected AbstractConnection p2SConnection;
-    protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.processorsNumber * 2);
+    protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.coreNum * 2);
     protected int id;
 
     public AbstractConnection() {

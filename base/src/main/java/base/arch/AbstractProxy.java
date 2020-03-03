@@ -14,7 +14,7 @@ public abstract class AbstractProxy {
     private ServerBootstrap server = new ServerBootstrap();
     private int bindPort;
     private String serverAddress = LOCALHOST;
-    private int threadNumber = Platform.processorsNumber * 2 + 1;
+    private int threadNumber = Platform.coreNum * 2 + 1;
     private final ChannelGroup allChannels = new ChannelGroup();
     public static boolean CLIENT_MODE = true;
 

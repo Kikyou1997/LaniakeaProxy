@@ -36,7 +36,7 @@ public class ProxyClient extends AbstractProxy {
         Config.loadSettings(true);
         getIdFromRemoteServer(Config.config.getServerAddress(), Config.config.getServerPort());
         ServerBootstrap server = new ServerBootstrap();
-        server.group(new NioEventLoopGroup(Platform.processorsNumber), new NioEventLoopGroup(Platform.processorsNumber * 2));
+        server.group(new NioEventLoopGroup(Platform.coreNum), new NioEventLoopGroup(Platform.coreNum * 2));
         server.channel(NioServerSocketChannel.class);
         server.childOption(ChannelOption.TCP_NODELAY, true);
         server.childHandler(new ChannelInitializer<SocketChannel>() {
