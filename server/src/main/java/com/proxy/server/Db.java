@@ -13,6 +13,8 @@ import java.util.concurrent.LinkedTransferQueue;
 @Slf4j
 public class Db {
 
+    private static final String dbScheme = "jdbc:sqlite:";
+
     private static final String dbName = "statistics";
 
     /**
@@ -49,7 +51,7 @@ public class Db {
     private static Connection connection = null;
 
     public static void initDb() {
-        String url = Platform.workDir + Platform.separator + dbName;
+        String url = Db.dbScheme + Platform.workDir + Platform.separator + dbName;
         try {
             Db.connection = DriverManager.getConnection(url);
             connection.createStatement().execute(createUserInfoTable);
@@ -71,7 +73,7 @@ public class Db {
                 try {
                     track = trackQueue.take();
                     recordTrack(track.userId, track.getStartTime(), track.getEndTime(), track.getUsedTraffic());
-                } catch (InterruptedException e) {
+                } catch (InterruptedException | SQLException e) {
                     log.warn("Unexpected interrupted", e);
                 }
             }
@@ -97,16 +99,13 @@ public class Db {
         int usedTraffic;
     }
 
-    public static void recordTrack(int uid, int start, int end, int used) {
-        try {
-            insertIntoConcreteStatement.setInt(1, uid);
-            insertIntoConcreteStatement.setInt(2, start);
-            insertIntoConcreteStatement.setInt(3, end);
-            insertIntoConcreteStatement.setInt(4, used);
-            insertIntoConcreteStatement.execute();
-        } catch (SQLException e) {
-            log.error("Record track failed", e);
-        }
+    public static void recordTrack(int uid, int start, int end, int used) throws SQLException{
+        insertIntoConcreteStatement.setInt(1, uid);
+        insertIntoConcreteStatement.setInt(2, start);
+        insertIntoConcreteStatement.setInt(3, end);
+        insertIntoConcreteStatement.setInt(4, used);
+        insertIntoConcreteStatement.execute();
+
     }
 
     public static void updateUserInfo(UserInfo user) throws SQLException {
@@ -122,6 +121,12 @@ public class Db {
         updateUserInfoStatement.execute();
     }
 
+    public static void addNewUser(UserInfo user) throws SQLException {
+        insertIntoUserInfoStatement.setString(1, user.getUsername());
+        insertIntoUserInfoStatement.setInt(2, user.getUsedTraffic());
+        insertIntoUserInfoStatement.setInt(3, user.getLoginTimes());
+        insertIntoUserInfoStatement.execute();
+    }
     /* https://stackoverflow.com/questions/2467125/reusing-a-preparedstatement-multiple-times 另一种更高效的方式 sample:
      * public void executeBatch(List<Entity> entities) throws SQLException {
      *     try (
