@@ -58,9 +58,10 @@ public class ProxyServer extends AbstractProxy {
                         .addLast(channelTrafficStatistic)
                         .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                                 Packets.FIELD_ID_LENGTH + Packets.FIELD_CODE_LENGTH, Packets.FIELD_LENGTH_LEN))
+                        .addLast(new DataTransmissionPacketDecoder())
+                        .addLast(new StatisticHandler(channelTrafficStatistic.trafficCounter()))
                         .addLast(new DataTransmissionPacketEncoder())
                         .addLast(new StatisticHandler(channelTrafficStatistic.trafficCounter()))
-                        .addLast(new DataTransmissionPacketDecoder())
                         .addLast(new S_Client2ProxyConnection());
             }
         });

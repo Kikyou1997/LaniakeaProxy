@@ -13,18 +13,15 @@ public class DbTest {
 
     @Test
     public void recordTrack() throws Exception {
-        Db.recordTrack(1, 2, 3, 4);
-        Db.recordTrack(1, 2, 3, 4);
-
+        int count = 0;
+        long lastTime = System.currentTimeMillis();
+        while (count < 60) {
+            Db.Track track = new Db.Track("kikyou", lastTime, 60, "127.0.0.1");
+            Thread.sleep(500);
+            Db.recordTrack(track);
+            lastTime = System.currentTimeMillis();
+            count++;
+        }
     }
 
-    @Test
-    public void updateUserInfo() throws Exception {
-        Db.updateUserInfo(new Db.UserInfo(1, 1, 1, "kikyou"));
-    }
-
-    @Test
-    public void addNewUser() throws Exception{
-        Db.addNewUser(new Db.UserInfo(1,1,1,"kikyou"));
-    }
 }

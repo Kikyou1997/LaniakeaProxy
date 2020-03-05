@@ -41,12 +41,9 @@ public class Db {
 
     private static Connection connection = null;
 
-    public Db() {
+    public static void initDb() {
         new PersistenceConcreteTrackService().start();
         new ScheduledAggregateTrack().start();
-    }
-
-    public static void initDb() {
         String url = Db.dbScheme + Platform.workDir + Platform.separator + dbName;
         try {
             Db.connection = DriverManager.getConnection(url);
@@ -95,12 +92,13 @@ public class Db {
                         Track cur = q.take();
                         aggregated.setUsername(k);
                         aggregated.setIp(cur.getIp());
-                        aggregated.setStartTime(cur.getStartTime());
+                        aggregated.setStartTime(cur.getRecordTime());
+                        aggregated.setEndTime(cur.getRecordTime());
                         while (q.size() > 0) {
                             cur = q.take();
                             aggregated.setUsedTraffic(aggregated.getUsedTraffic() + cur.getUsedTraffic());
-                            aggregated.setEndTime(Math.max(aggregated.getEndTime(), cur.getEndTime()));
-                            aggregated.setStartTime(Math.min(aggregated.getStartTime(), cur.getStartTime()));
+                            aggregated.setEndTime(Math.max(aggregated.getEndTime(), cur.getRecordTime()));
+                            aggregated.setStartTime(Math.min(aggregated.getStartTime(), cur.getRecordTime()));
                         }
                         trackQueue.put(aggregated);
                     } catch (Exception e) {
@@ -112,7 +110,7 @@ public class Db {
         }
         @Override
         public void run() {
-            Executors.newScheduledThreadPool(2).scheduleAtFixedRate(new AggregateTrackService(), 0, 3, TimeUnit.MINUTES);
+            Executors.newScheduledThreadPool(2).scheduleAtFixedRate(new AggregateTrackService(), 0, 30, TimeUnit.SECONDS);
         }
     }
 
@@ -133,6 +131,9 @@ public class Db {
         long usedTraffic;
         String ip;
         transient long recordTime;
+
+        public Track() {
+        }
 
         public Track(String username, long recordTime, long usedTraffic, String ip) {
             this.username = username;
