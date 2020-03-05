@@ -14,6 +14,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.cli.*;
 
 import java.nio.charset.StandardCharsets;
 
@@ -30,6 +31,23 @@ public class ProxyClient extends AbstractProxy {
 
     private static final String LOCALHOST = "127.0.0.1";
     private long time = -1;
+
+    @Override
+    protected AbstractProxy prepare(String[] args) {
+        Options options = new Options();
+        CommandLineParser parser = new DefaultParser();
+        options.addOption(null, super.configOption, true, null);
+        try {
+            CommandLine commandLine = parser.parse(options, args);
+            if (commandLine.hasOption(super.configOption)) {
+                Config.CLIENT_CONFIG_FILE_PATH = commandLine.getOptionValue(super.configOption);
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        return this;
+    }
 
     @Override
     public void start() {
