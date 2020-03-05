@@ -1,5 +1,6 @@
 package com.proxy.server;
 
+import base.arch.Config;
 import base.arch.Platform;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +13,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class Db {
@@ -36,6 +38,8 @@ public class Db {
 
     private static final String insertIntoConcreteSql = "INSERT INTO Track VALUES (? ,? ,?, ?, ?)";
 
+    private static final String selectUserUsedSql = "SELECT usedTraffic FROM Track WHERE username = ?  ORDER BY usedTraffic DESC LIMIT 1";
+
     private static PreparedStatement insertIntoConcreteStatement;
 
 
@@ -48,6 +52,10 @@ public class Db {
         try {
             Db.connection = DriverManager.getConnection(url);
             connection.createStatement().execute(createConcreteUserTable);
+            for (Config.User u : Config.config.getUsers()) {
+                long used = getUserUsedTrafficFromDb(u.getUsername());
+                ServerContext.userTrafficMap.put(u.getUsername(), new AtomicLong(used));
+            }
             insertIntoConcreteStatement = connection.prepareStatement(insertIntoConcreteSql);
         } catch (SQLException e) {
             log.error("Sql error", e);
@@ -55,63 +63,10 @@ public class Db {
         }
     }
 
-    private static class PersistenceConcreteTrackService extends Thread {
-        @Override
-        public void run() {
-            while (true) {
-                Track track = null;
-                try {
-                    track = trackQueue.take();
-                    insertIntoConcreteStatement.setString(1, track.username);
-                    insertIntoConcreteStatement.setLong(2, track.getStartTime());
-                    insertIntoConcreteStatement.setLong(3, track.getEndTime());
-                    insertIntoConcreteStatement.setLong(4, track.getUsedTraffic());
-                    insertIntoConcreteStatement.setString(5, track.getIp());
-                    insertIntoConcreteStatement.execute();
-                } catch (InterruptedException | SQLException e) {
-                    log.warn("Unexpected interrupted", e);
-                }
-            }
-        }
-    }
-
-
-
-    private static class ScheduledAggregateTrack extends Thread {
-        // 可能会有一些问题
-        private static class AggregateTrackService implements Runnable {
-            @Override
-            public void run() {
-                for (String k : toBeAggregated.keySet()) {
-                    BlockingQueue<Track> q = toBeAggregated.get(k);
-                    if (q == null) {
-                        continue;
-                    }
-                    try {
-                        Track aggregated = new Track();
-                        Track cur = q.take();
-                        aggregated.setUsername(k);
-                        aggregated.setIp(cur.getIp());
-                        aggregated.setStartTime(cur.getRecordTime());
-                        aggregated.setEndTime(cur.getRecordTime());
-                        while (q.size() > 0) {
-                            cur = q.take();
-                            aggregated.setUsedTraffic(aggregated.getUsedTraffic() + cur.getUsedTraffic());
-                            aggregated.setEndTime(Math.max(aggregated.getEndTime(), cur.getRecordTime()));
-                            aggregated.setStartTime(Math.min(aggregated.getStartTime(), cur.getRecordTime()));
-                        }
-                        trackQueue.put(aggregated);
-                    } catch (Exception e) {
-                        // do nothing
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        @Override
-        public void run() {
-            Executors.newScheduledThreadPool(2).scheduleAtFixedRate(new AggregateTrackService(), 0, 30, TimeUnit.SECONDS);
-        }
+    public static long getUserUsedTrafficFromDb(String username) throws SQLException {
+        PreparedStatement p = Db.connection.prepareStatement(selectUserUsedSql);
+        p.setString(1, username);
+        return p.executeQuery().getLong(1);
     }
 
     public static void addRecord(Track track) {
@@ -123,25 +78,6 @@ public class Db {
         }
     }
 
-    @Data
-    public static class Track {
-        String username;
-        long startTime;
-        long endTime;
-        long usedTraffic;
-        String ip;
-        transient long recordTime;
-
-        public Track() {
-        }
-
-        public Track(String username, long recordTime, long usedTraffic, String ip) {
-            this.username = username;
-            this.usedTraffic = usedTraffic;
-            this.ip = ip;
-            this.recordTime = recordTime;
-        }
-    }
 
     public static void recordTrack(Track track) {
         try {
@@ -179,5 +115,83 @@ public class Db {
      *     }
      * }
      */
+
+    private static class PersistenceConcreteTrackService extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                Track track = null;
+                try {
+                    track = trackQueue.take();
+                    insertIntoConcreteStatement.setString(1, track.username);
+                    insertIntoConcreteStatement.setLong(2, track.getStartTime());
+                    insertIntoConcreteStatement.setLong(3, track.getEndTime());
+                    insertIntoConcreteStatement.setLong(4, track.getUsedTraffic());
+                    insertIntoConcreteStatement.setString(5, track.getIp());
+                    insertIntoConcreteStatement.execute();
+                } catch (InterruptedException | SQLException e) {
+                    log.warn("Unexpected interrupted", e);
+                }
+            }
+        }
+    }
+
+    private static class ScheduledAggregateTrack extends Thread {
+        // 可能会有一些问题
+        private static class AggregateTrackService implements Runnable {
+            @Override
+            public void run() {
+                for (String k : toBeAggregated.keySet()) {
+                    BlockingQueue<Track> q = toBeAggregated.get(k);
+                    if (q == null) {
+                        continue;
+                    }
+                    try {
+                        Track aggregated = new Track();
+                        Track cur = q.take();
+                        aggregated.setUsername(k);
+                        aggregated.setIp(cur.getIp());
+                        aggregated.setStartTime(cur.getRecordTime());
+                        aggregated.setEndTime(cur.getRecordTime());
+                        while (q.size() > 0) {
+                            cur = q.take();
+                            aggregated.setUsedTraffic(aggregated.getUsedTraffic() + cur.getUsedTraffic());
+                            aggregated.setEndTime(Math.max(aggregated.getEndTime(), cur.getRecordTime()));
+                            aggregated.setStartTime(Math.min(aggregated.getStartTime(), cur.getRecordTime()));
+                        }
+                        trackQueue.put(aggregated);
+                    } catch (Exception e) {
+                        // do nothing
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            Executors.newScheduledThreadPool(2).scheduleAtFixedRate(new AggregateTrackService(), 0, 30, TimeUnit.SECONDS);
+        }
+    }
+
+    @Data
+    public static class Track {
+        String username;
+        long startTime;
+        long endTime;
+        long usedTraffic;
+        String ip;
+        transient long recordTime;
+
+        public Track() {
+        }
+
+        public Track(String username, long recordTime, long usedTraffic, String ip) {
+            this.username = username;
+            this.usedTraffic = usedTraffic;
+            this.ip = ip;
+            this.recordTime = recordTime;
+        }
+    }
 
 }

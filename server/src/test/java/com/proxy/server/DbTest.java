@@ -1,6 +1,7 @@
 package com.proxy.server;
 
 
+import base.arch.Config;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -8,6 +9,7 @@ public class DbTest {
 
     @BeforeClass
     public static void init() {
+        Config.loadSettings(false);
         Db.initDb();
     }
 
@@ -22,6 +24,11 @@ public class DbTest {
             lastTime = System.currentTimeMillis();
             count++;
         }
+    }
+
+    @Test
+    public void getUserUsedTrafficFromDb() throws Exception {
+        System.out.println(Db.getUserUsedTrafficFromDb("kikyou"));
     }
 
 }
