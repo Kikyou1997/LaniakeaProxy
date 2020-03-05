@@ -39,5 +39,6 @@ public class StatisticHandler extends ChannelInboundHandlerAdapter {
         log.debug("Connection for {} used traffic {}", ProxyUtil.getRemoteAddressAndPortFromChannel(ctx), total);
         AtomicLong usedTraffic = ServerContext.userTrafficMap.get(username);
         usedTraffic.compareAndSet(usedTraffic.get(), usedTraffic.get() + total);
+        Db.addRecord(new Db.Track(username, System.currentTimeMillis(), usedTraffic.get(), ProxyUtil.getRemoteAddressAndPortFromChannel(ctx)));
     }
 }
