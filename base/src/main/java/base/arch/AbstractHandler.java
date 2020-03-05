@@ -21,7 +21,6 @@ public abstract class AbstractHandler<R> extends SimpleChannelInboundHandler<Byt
 
     protected ChannelHandlerContext context;
 
-
     protected void sendResponse(ByteBuf response) {
         boolean succeed = false;
         int count = 0;

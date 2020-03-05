@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 public class ProxyClient extends AbstractProxy {
 
     public static void main(String[] args) throws Exception {
-        new ProxyClient().start();
+        new ProxyClient().prepare(args).start();
     }
 
     private static final String LOCALHOST = "127.0.0.1";
