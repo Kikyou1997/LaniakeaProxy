@@ -1,11 +1,8 @@
 package base.arch;
 
-import io.netty.buffer.EmptyByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -21,18 +18,26 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
 
     protected AbstractConnection c2PConnection;
     protected AbstractConnection p2SConnection;
-    protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.processorsNumber * 2);
+    protected static NioEventLoopGroup group = new NioEventLoopGroup(Platform.coreNum * 2);
     protected int id;
 
+    public AbstractConnection() {
+    }
+
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        this.ctx = ctx;
+        this.channel = ctx.channel();
+        super.channelRegistered(ctx);
+    }
 
     @SuppressWarnings("unchecked")
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        this.channel = ctx.channel();
-        this.ctx = ctx;
-        doRead(ctx, (V)msg);
-        ReferenceCountUtil.safeRelease(msg);
+        doRead(ctx, (V) msg);
         ctx.fireChannelRead(msg);
+        ReferenceCountUtil.safeRelease(msg);
     }
 
     protected abstract void doRead(ChannelHandlerContext ctx, V msg) throws Exception;
@@ -42,25 +47,12 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
     }
 
     protected void disconnect() {
-        if (p2SConnection != null) {
-            closeConnection(p2SConnection);
+        if (p2SConnection != null && p2SConnection.channel != null){
+            p2SConnection.channel.close();
         }
-        if (c2PConnection != null) {
-            closeConnection(c2PConnection);
+        if (c2PConnection != null && c2PConnection.channel != null) {
+            c2PConnection.channel.close();
         }
-    }
-
-    private void closeConnection(AbstractConnection connection) {
-        Channel c = connection.channel;
-        if (c != null) {
-            c.writeAndFlush(new EmptyByteBuf(channel.alloc())).addListener(new GenericFutureListener<Future<? super Void>>() {
-                @Override
-                public void operationComplete(Future<? super Void> future) throws Exception {
-                    p2SConnection.channel.close();
-                }
-            });
-        }
-
     }
 
     @Override
@@ -70,7 +62,7 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        log.error("Error", cause);
         disconnect();
     }
 

@@ -17,6 +17,10 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
 
     //private static int temp = 0;
 
+
+    public C_Proxy2ServerConnection() {
+    }
+
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
     }
@@ -55,7 +59,6 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
         });
         //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
-        this.channel = future.channel();
         if (!future.isSuccess()) {
             this.channel.close();
         }

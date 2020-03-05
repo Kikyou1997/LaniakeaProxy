@@ -9,6 +9,37 @@
 3. 用户使用流量的统计
 4. 数据加密
 
+## 配置
+
+Linux环境下，配置文件应置于/etc/andromeda目录下，server的配置文件以server_config.json命名， client的配置文件以config.json命名
+
+server sample:
+
+```json
+{
+    "server_address":"127.0.0.1",
+    "server_port":18081,
+    "users":[
+        {
+            "username":"kikyou",
+            "secret_key":"caIWbdpnMyjdbc8iU8x3eGNRLZ8tHxpH"
+        }
+    ]
+}
+```
+
+client sample:
+
+```json
+{
+    "server_address":"127.0.0.1",
+    "server_port":18081,
+    "local_port":1084,
+    "username":"kikyou",
+    "secret_key":"caIWbdpnMyjdbc8iU8x3eGNRLZ8tHxpH"
+}
+```
+
 ## 关于认证流程
 
 客户端保存: 用户名 密钥

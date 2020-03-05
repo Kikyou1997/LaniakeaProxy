@@ -6,14 +6,17 @@ import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Ref;
 
 /**
  * @author kikyou
@@ -35,11 +38,11 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
-
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
         super.id = ClientContext.id;
     }
+
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
@@ -74,6 +77,7 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
                     Converter.convertInteger2ByteBigEnding(id), Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
                     encrypted);
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
+            ReferenceCountUtil.safeRelease(buf);
         } catch (Exceptions.ConnectionTimeoutException e) {
             log.error("Connect to remote proxy server timeout", e);
         }

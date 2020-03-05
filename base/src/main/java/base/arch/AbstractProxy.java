@@ -2,6 +2,10 @@ package base.arch;
 
 import io.netty.bootstrap.ServerBootstrap;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
 
 /**
  * @author kikyou
@@ -14,10 +18,11 @@ public abstract class AbstractProxy {
     private ServerBootstrap server = new ServerBootstrap();
     private int bindPort;
     private String serverAddress = LOCALHOST;
-    private int threadNumber = Platform.processorsNumber * 2 + 1;
+    private int threadNumber = Platform.coreNum * 2 + 1;
     private final ChannelGroup allChannels = new ChannelGroup();
     public static boolean CLIENT_MODE = true;
-
+    // set configuration file path
+    protected String configOption = "-c";
 
     public AbstractProxy() {
     }
@@ -29,15 +34,7 @@ public abstract class AbstractProxy {
         this.bindPort = config.getLocalPort();
     }
 
-
-    {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                allChannels.closeChannels();
-            }
-        });
-    }
+    protected AbstractProxy prepare(String []args){return null;}
 
     public abstract void start();
 
