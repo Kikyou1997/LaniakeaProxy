@@ -24,11 +24,20 @@ public class ProxyServer extends AbstractProxy {
     protected AbstractProxy prepare(String[] args) {
         Options options = new Options();
         CommandLineParser parser = new DefaultParser();
-        options.addOption(null, super.configOption, true, null);
+        options.addOption(super.configOption, true, null);
+        options.addOption(super.generateSecretKeyOption, true, null);
         try {
             CommandLine commandLine = parser.parse(options, args);
             if (commandLine.hasOption(super.configOption)) {
                 Config.SERVER_CONFIG_FILE_PATH = commandLine.getOptionValue(super.configOption);
+            }
+            if (commandLine.hasOption(super.generateSecretKeyOption)) {
+                int num = Integer.parseInt(commandLine.getOptionValue(super.generateSecretKeyOption));
+                System.out.println("Generated following Secret keys:");
+                for (int i = 0; i < num; i++) {
+                    System.out.println(CryptoUtil.base64Encode(CryptoUtil.initKey()));
+                }
+                System.exit(0);
             }
 
         } catch (ParseException e) {
@@ -40,7 +49,6 @@ public class ProxyServer extends AbstractProxy {
 
     @Override
     public void start() {
-        System.out.println(CryptoUtil.encodeFromBytes(CryptoUtil.initKey()));
         Config.loadSettings(false);
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.coreNum), new NioEventLoopGroup(Platform.coreNum * 2));

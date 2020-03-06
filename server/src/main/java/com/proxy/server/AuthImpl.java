@@ -39,8 +39,8 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
             return false;
         }
         byte[] validHash = CryptoUtil.getSHA256Hash(user.getSecretKey(), Clock.getTimeInBytes());
-        System.out.println(CryptoUtil.encodeFromBytes(validHash));
-        System.out.println(CryptoUtil.encodeFromBytes((receivedHash)));
+        System.out.println(CryptoUtil.base64Encode(validHash));
+        System.out.println(CryptoUtil.base64Encode((receivedHash)));
         return Arrays.equals(receivedHash, validHash);
     }
 
