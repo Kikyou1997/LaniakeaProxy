@@ -26,7 +26,7 @@ public class StatisticHandler extends ChannelInboundHandlerAdapter {
             if (msg instanceof LaniakeaPacket) {
                 LaniakeaPacket pkg = (LaniakeaPacket) msg;
                 int id = pkg.getId();
-                this.username = ServerContext.idNameMap.get(id);
+                this.username = ServerContext.getSession(id).getUsername();
             }
         }
 
@@ -35,10 +35,15 @@ public class StatisticHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        long total = trafficCounter.cumulativeReadBytes() + trafficCounter.cumulativeWrittenBytes();
-        log.debug("Connection for {} used traffic {}", ProxyUtil.getRemoteAddressAndPortFromChannel(ctx), total);
-        AtomicLong usedTraffic = ServerContext.userTrafficMap.get(username);
-        usedTraffic.compareAndSet(usedTraffic.get(), usedTraffic.get() + total);
-        Db.addRecord(new Db.Track(username, System.currentTimeMillis(), usedTraffic.get(), ProxyUtil.getRemoteAddressAndPortFromChannel(ctx)));
+        try {
+            long total = trafficCounter.cumulativeReadBytes() + trafficCounter.cumulativeWrittenBytes();
+            log.debug("Connection for {} used traffic {}", ProxyUtil.getRemoteAddressAndPortFromChannel(ctx), total);
+            AtomicLong usedTraffic = ServerContext.userTrafficMap.get(username);
+            usedTraffic.compareAndSet(usedTraffic.get(), usedTraffic.get() + total);
+            Db.addRecord(new Db.Track(username, System.currentTimeMillis(), usedTraffic.get(), ProxyUtil.getRemoteAddressAndPortFromChannel(ctx)));
+        } catch (Exception e){
+            log.debug("Ignored exception,", e);
+        }
+
     }
 }

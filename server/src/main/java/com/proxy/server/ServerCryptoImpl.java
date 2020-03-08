@@ -20,8 +20,8 @@ public class ServerCryptoImpl implements Crypto {
 
     public ServerCryptoImpl(int id) {
         this.id = id;
-        secretKey = Config.getUserSecretKeyBin(ServerContext.idNameMap.get(id));
-        iv = ServerContext.idIvMap.get(id);
+        secretKey = Config.getUserSecretKeyBin(ServerContext.getSession(id).getUsername());
+        iv = ServerContext.getSession(id).getIv();
     }
 
     public ServerCryptoImpl() {
@@ -30,8 +30,8 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf encrypt(ByteBuf raw) {
         raw.readerIndex(0);
-        byte[] iv = ServerContext.idIvMap.get(id);
-        byte[] key = Config.getUserSecretKeyBin(ServerContext.idNameMap.get(id));
+        byte[] iv = ServerContext.getSession(id).getIv();
+        byte[] key = Config.getUserSecretKeyBin(ServerContext.getSession(id).getUsername());
         try {
             return CryptoUtil.encrypt(raw, iv, key);
         } catch (Exception e) {
