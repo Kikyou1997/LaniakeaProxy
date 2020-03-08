@@ -131,11 +131,11 @@ public class CryptoUtil {
         return ProxyUtil.getByteBufFromBytes(re);
     }
 
-    public static byte[] decodeFromString(String encoded) {
+    public static byte[] base64Decode(String encoded) {
         return base64Decoder.decode(encoded);
     }
 
-    public static String encodeFromBytes(byte[] bytes) {
+    public static String base64Encode(byte[] bytes) {
         return base64Encoder.encodeToString(bytes);
     }
 

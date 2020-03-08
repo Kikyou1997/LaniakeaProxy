@@ -45,6 +45,7 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
                 handler = byteHandlerMap.get(AUTH_REQ);
                 handler.handle(msg, ctx);
                 return;
+            case GET_USED_TRAFFIC:
         }
         msg.readerIndex(0);
         ctx.fireChannelRead(msg);

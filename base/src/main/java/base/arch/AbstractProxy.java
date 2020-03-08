@@ -22,7 +22,8 @@ public abstract class AbstractProxy {
     private final ChannelGroup allChannels = new ChannelGroup();
     public static boolean CLIENT_MODE = true;
     // set configuration file path
-    protected String configOption = "-c";
+    protected String configOption = "c";
+    protected String generateSecretKeyOption = "g";
 
     public AbstractProxy() {
     }

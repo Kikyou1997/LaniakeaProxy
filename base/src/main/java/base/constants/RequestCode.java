@@ -9,4 +9,6 @@ public interface RequestCode {
     byte AUTH_REQ= 0x2;
     byte DATA_TRANS_REQ = 0x4;
     byte CONNECT = 0x5;
+    byte GET_USED_TRAFFIC = 0x6;
+    byte GET_USED_TRAFFIC_ALL = 0x7;
 }
