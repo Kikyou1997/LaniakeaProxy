@@ -31,4 +31,8 @@ public class DbTest {
         System.out.println(Db.getUserUsedTrafficFromDb("kikyou"));
     }
 
+    @Test
+    public void initDb() {
+        Db.initDb();
+    }
 }

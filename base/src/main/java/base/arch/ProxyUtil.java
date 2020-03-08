@@ -25,7 +25,6 @@ public class ProxyUtil {
             int port = ((InetSocketAddress) channel.remoteAddress()).getPort();
             return host + ":" + port;
         } catch (Exception e) {
-            log.error("Resolve socket address from channel failed", e);
             return null;
         }
     }

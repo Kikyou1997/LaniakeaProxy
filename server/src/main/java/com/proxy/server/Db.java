@@ -2,7 +2,6 @@ package com.proxy.server;
 
 import base.arch.Config;
 import base.arch.Platform;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,21 +41,21 @@ public class Db {
 
     private static PreparedStatement insertIntoConcreteStatement;
 
-
     private static Connection connection = null;
 
     public static void initDb() {
         new PersistenceConcreteTrackService().start();
         new ScheduledAggregateTrack().start();
         String url = Db.dbScheme + Platform.workDir + Platform.separator + dbName;
+        log.info("Db file path: {}", url);
         try {
             Db.connection = DriverManager.getConnection(url);
+            insertIntoConcreteStatement = connection.prepareStatement(insertIntoConcreteSql);
             connection.createStatement().execute(createConcreteUserTable);
             for (Config.User u : Config.config.getUsers()) {
                 long used = getUserUsedTrafficFromDb(u.getUsername());
                 ServerContext.userTrafficMap.put(u.getUsername(), new AtomicLong(used));
             }
-            insertIntoConcreteStatement = connection.prepareStatement(insertIntoConcreteSql);
         } catch (SQLException e) {
             log.error("Sql error", e);
             System.exit(-1);
@@ -66,7 +65,12 @@ public class Db {
     public static long getUserUsedTrafficFromDb(String username) throws SQLException {
         PreparedStatement p = Db.connection.prepareStatement(selectUserUsedSql);
         p.setString(1, username);
-        return p.executeQuery().getLong(1);
+        ResultSet res = p.executeQuery();
+        if (res.isClosed()) {
+            return 0;
+        } else {
+            return res.getLong(1);
+        }
     }
 
     public static void addRecord(Track track) {
@@ -77,7 +81,6 @@ public class Db {
             e.printStackTrace();
         }
     }
-
 
     public static void recordTrack(Track track) {
         try {
@@ -91,6 +94,15 @@ public class Db {
             // do nothing
             e.printStackTrace();
         }
+    }
+
+    private static void recordTrack0(Track track) throws SQLException {
+        insertIntoConcreteStatement.setString(1, track.username);
+        insertIntoConcreteStatement.setLong(2, track.getStartTime());
+        insertIntoConcreteStatement.setLong(3, track.getEndTime());
+        insertIntoConcreteStatement.setLong(4, track.getUsedTraffic());
+        insertIntoConcreteStatement.setString(5, track.getIp());
+        insertIntoConcreteStatement.execute();
     }
 
     /* https://stackoverflow.com/questions/2467125/reusing-a-preparedstatement-multiple-times 另一种更高效的方式 sample:
@@ -123,12 +135,7 @@ public class Db {
                 Track track = null;
                 try {
                     track = trackQueue.take();
-                    insertIntoConcreteStatement.setString(1, track.username);
-                    insertIntoConcreteStatement.setLong(2, track.getStartTime());
-                    insertIntoConcreteStatement.setLong(3, track.getEndTime());
-                    insertIntoConcreteStatement.setLong(4, track.getUsedTraffic());
-                    insertIntoConcreteStatement.setString(5, track.getIp());
-                    insertIntoConcreteStatement.execute();
+                    recordTrack0(track);
                 } catch (InterruptedException | SQLException e) {
                     log.warn("Unexpected interrupted", e);
                 }

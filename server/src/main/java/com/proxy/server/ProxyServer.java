@@ -50,6 +50,7 @@ public class ProxyServer extends AbstractProxy {
     @Override
     public void start() {
         Config.loadSettings(false);
+        Db.initDb();
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.coreNum), new NioEventLoopGroup(Platform.coreNum * 2));
         server.channel(NioServerSocketChannel.class);
