@@ -10,5 +10,6 @@ public interface ResponseCode {
     byte AUTH_RESP = (byte)0xfe;
     byte DATA_TRANS_RESP = (byte)0xfd;
     byte CONN_ESTAB = (byte)0xfc;
+    byte AUTH_FAILED = (byte)0xfb;
 
 }

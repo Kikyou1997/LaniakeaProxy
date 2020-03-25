@@ -8,10 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -33,6 +30,7 @@ public class Db {
             ")";
 
     private static final BlockingQueue<Track> trackQueue = new LinkedTransferQueue<>();
+
     private static final Map<String/*用户名*/, BlockingQueue<Track>> toBeAggregated = new HashMap<>();
 
     private static final String insertIntoConcreteSql = "INSERT INTO Track VALUES (? ,? ,?, ?, ?)";
@@ -41,11 +39,16 @@ public class Db {
 
     private static PreparedStatement insertIntoConcreteStatement;
 
+    private static PersistenceConcreteTrackService persistenceConcreteTrackService = new PersistenceConcreteTrackService();
+
+
     private static Connection connection = null;
 
+    private static ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
+
     public static void initDb() {
-        new PersistenceConcreteTrackService().start();
-        new ScheduledAggregateTrack().start();
+        persistenceConcreteTrackService.start();
+        scheduled.scheduleAtFixedRate(new ScheduledAggregateTrack.AggregateTrackService(), 5, 5, TimeUnit.MINUTES);
         String url = Db.dbScheme + Platform.workDir + Platform.separator + dbName;
         log.info("Db file path: {}", url);
         try {
@@ -70,15 +73,6 @@ public class Db {
             return 0;
         } else {
             return res.getLong(1);
-        }
-    }
-
-    public static void addRecord(Track track) {
-        try {
-            trackQueue.put(track);
-        } catch (InterruptedException e) {
-            // do nothing
-            e.printStackTrace();
         }
     }
 
