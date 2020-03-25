@@ -30,7 +30,7 @@ public class ProxyClient extends AbstractProxy {
     }
 
     private static final String LOCALHOST = "127.0.0.1";
-    private long time = -1;
+    private long serverClock = -1;
 
     @Override
     protected AbstractProxy prepare(String[] args) {
@@ -80,17 +80,18 @@ public class ProxyClient extends AbstractProxy {
                 byte code = msg.readByte();
                 switch (code) {
                     case ResponseCode.CLOCK_RESP:
-                        time = msg.readLong();
-                        log.info("Clock received: " + time);
+                        serverClock = msg.readLong();
+                        log.info("Clock received: " + serverClock);
                         break;
                     case ResponseCode.AUTH_RESP:
                         int id = msg.readInt();
-                        byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
-                        msg.readBytes(iv);
-                        log.info(" Id received : {} Iv received: {}", id, iv);
-                        ClientContext.initContext(id, iv);
+                        log.info(" Id received : {}", id);
+                        ClientContext.initContext(id);
                         ctx.close();
                         break;
+                    case ResponseCode.AUTH_FAILED:
+                        log.error("username or secret key incorrect");
+                        System.exit(-1);
                     default:
                         //do nothing
                         break;
@@ -100,20 +101,23 @@ public class ProxyClient extends AbstractProxy {
         Channel channel = b.connect(ip, port).channel();
         channel.writeAndFlush(generateClockRequest());
         log.info("Waiting client context initialized");
-        while (time == -1) {
+        int waitingTime = 5000;
+        while (serverClock == -1 && waitingTime > 0) {
             try {
+                channel.writeAndFlush(generateClockRequest());
                 Thread.currentThread().join(50);
+                waitingTime -= 50;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        channel.writeAndFlush(generateAuthRequest(time));
-        while (ClientContext.iv == null) {
-            try {
-                Thread.currentThread().join(50);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (serverClock == -1) {
+            log.error("Build Connection failed");
+            System.exit(-1);
+        }
+        ChannelFuture future = channel.writeAndFlush(generateAuthRequest(serverClock)).syncUninterruptibly();
+        if (!future.isSuccess()) {
+            log.error("Build Connection failed");
         }
         log.info("Client Context initialized");
 
@@ -127,9 +131,12 @@ public class ProxyClient extends AbstractProxy {
 
     private ByteBuf generateAuthRequest(long clockTime) {
         ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
-        buf.writeByte(RequestCode.AUTH_REQ).writeBytes(
-                CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))
-        ).writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
+        buf.
+                writeByte(RequestCode.AUTH_REQ).
+                writeBytes(
+                CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
+                writeBytes(ClientContext.iv).
+                writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
         return buf;
     }
 

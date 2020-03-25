@@ -21,7 +21,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
 
     private static AtomicInteger idAllocator = new AtomicInteger(0);
     private static final int HASH_POS = Packets.FIELD_CODE_LENGTH;
-    private static final int USERNAME_POS = Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH;
+    private static final int USERNAME_POS = Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH + Packets.FIELD_IV_LENGTH;
 
     @Override
     public boolean isValid(Object msg) {
@@ -46,13 +46,16 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
                 int id = idAllocator.getAndIncrement();
                 ServerContext.Session session = ServerContext.getSession(id);
                 session.setLastActiveTime(System.currentTimeMillis());
+                ((ByteBuf) msg).readerIndex(USERNAME_POS - Packets.FIELD_IV_LENGTH);
+                byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
+                ((ByteBuf) msg).readBytes(iv);
+                session.setIv(iv);
                 session.setUsername(getUsername((ByteBuf) msg));
-                byte[] iv = CryptoUtil.ivGenerator();
-                log.info("Generated id: {} Iv: {}", id, iv);
-                ByteBuf resp = createAuthResponse(id, iv);
+                ByteBuf resp = createAuthResponse(id, ResponseCode.AUTH_RESP);
                 sendResponse(resp);
                 ServerContext.getSession(id).setIv(iv);
             } else {
+                ctx.writeAndFlush(MessageGenerator.generateDirectBuf(ResponseCode.AUTH_FAILED));
                 context.channel().close();
             }
         }
@@ -66,8 +69,8 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
         return new String(usernameBytes, StandardCharsets.US_ASCII);
     }
 
-    private ByteBuf createAuthResponse(int id, byte[] iv) {
-        return MessageGenerator.generateDirectBuf(ResponseCode.AUTH_RESP, Converter.convertInteger2ByteBigEnding(id), iv);
+    private ByteBuf createAuthResponse(int id, byte code) {
+        return MessageGenerator.generateDirectBuf(code, Converter.convertInteger2ByteBigEnding(id));
     }
 
 
