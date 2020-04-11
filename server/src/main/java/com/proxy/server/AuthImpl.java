@@ -44,7 +44,7 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
         super.context = ctx;
         if (msg instanceof ByteBuf) {
             if (isValid(msg)) {
-                int id = idAllocator.getAndIncrement();
+                int id = idAllocator.incrementAndGet();
                 ServerContext.Session session = ServerContext.getSession(id);
                 session.setLastActiveTime(System.currentTimeMillis());
                 ((ByteBuf) msg).readerIndex(USERNAME_POS - Packets.FIELD_IV_LENGTH);
@@ -54,7 +54,6 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
                 session.setUsername(getUsername((ByteBuf) msg));
                 ByteBuf resp = createAuthResponse(id, ResponseCode.AUTH_RESP);
                 sendResponse(resp);
-                ServerContext.getSession(id).setIv(iv);
             } else {
                 ctx.writeAndFlush(MessageGenerator.generateDirectBuf(ResponseCode.AUTH_FAILED));
                 context.channel().close();

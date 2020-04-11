@@ -1,15 +1,18 @@
 package com.proxy.client;
 
 import base.arch.Config;
+import base.arch.HexDump;
 import base.crypto.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author kikyou
  * Created at 2020/2/20
  */
+@Slf4j
 public class ClientCryptoImpl implements Crypto {
 
     private byte[] iv = ClientContext.iv;
@@ -28,6 +31,8 @@ public class ClientCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
+            log.debug("iv " + HexDump.dump(null, iv));
+            log.debug("sk " + HexDump.dump(null, sk));
             return CryptoUtil.decrypt(cypherText, iv, sk);
         } catch (Exception e) {
             e.printStackTrace();

@@ -22,6 +22,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
+        log.debug("Bf Dec "+ HexDump.dump(msg.getContent()));
         ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
         log.debug("Af Dec "+ HexDump.dump(decrypted));
         c2PConnection.writeData(decrypted);

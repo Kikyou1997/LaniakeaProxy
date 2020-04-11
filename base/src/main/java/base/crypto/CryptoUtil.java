@@ -15,7 +15,7 @@ public class CryptoUtil {
 
     private static Base64.Encoder base64Encoder = Base64.getEncoder();
     private static Base64.Decoder base64Decoder = Base64.getDecoder();
-    private static AbstractCrypto crypto = new CFBCrypto(256, 16);
+    private static AbstractCrypto crypto = new GCMCrypto(256, 16, 16);
 
     public static byte[] getSHA256Hash(byte[] secretKey, byte[] salt) {
         MessageDigest digest = null;

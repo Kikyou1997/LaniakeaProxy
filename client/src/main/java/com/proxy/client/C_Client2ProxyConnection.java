@@ -54,7 +54,7 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
         if (p2SConnection != null) {
             msg.readerIndex(0);
             var encrypted = crypto.encrypt(msg);
-            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.DATA_TRANS_REQ, id, encrypted.readableBytes(), encrypted);
+            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.DATA_TRANS_REQ, super.id, encrypted.readableBytes(), encrypted);
             p2SConnection.writeData(packet);
         }
     }

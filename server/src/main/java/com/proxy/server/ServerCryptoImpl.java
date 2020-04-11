@@ -1,6 +1,8 @@
 package com.proxy.server;
 
 import base.arch.Config;
+import base.arch.HexDump;
+import base.crypto.CryptoException;
 import base.crypto.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
@@ -30,10 +32,8 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf encrypt(ByteBuf raw) {
         raw.readerIndex(0);
-        byte[] iv = ServerContext.getSession(id).getIv();
-        byte[] key = Config.getUserSecretKeyBin(ServerContext.getSession(id).getUsername());
         try {
-            return CryptoUtil.encrypt(raw, iv, key);
+            return CryptoUtil.encrypt(raw, iv, secretKey);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

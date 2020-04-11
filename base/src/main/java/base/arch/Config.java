@@ -76,7 +76,11 @@ public class Config implements Serializable {
 
     public byte[] getSecretKeyBin() {
         if (this.secretKeyBin == null) {
-            this.secretKeyBin = CryptoUtil.base64Decode(this.secretKey);
+            if (this.secretKey != null){
+                this.secretKeyBin = CryptoUtil.base64Decode(this.secretKey);
+            } else {
+                return null;
+            }
         }
         return secretKeyBin;
     }
