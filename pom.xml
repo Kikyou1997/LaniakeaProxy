@@ -12,6 +12,8 @@
         <module>server</module>
         <module>client</module>
         <module>base</module>
+        <module>crypto</module>
+        <module>socks</module>
     </modules>
 
     <dependencies>

@@ -29,18 +29,6 @@ public class CryptoUtil {
         return new SecretKeySpec(key, ALG);
     }
 
-    public static Cipher initCipher(Key key, IvParameterSpec ivParameterSpec) {
-        Cipher cipher = null;
-        try {
-            cipher = Cipher.getInstance(CIPHER);
-            cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
-            return cipher;
-        } catch (Exception e) {
-            throw new Error("Cipher init failed");
-        }
-    }
-
-
     public  static byte[] getSHA256Hash(byte[] secretKey, byte[] salt) {
         MessageDigest digest = null;
         try {
@@ -80,7 +68,7 @@ public class CryptoUtil {
         return encrypt(data, key, spec);
     }
 
-    public static byte[] initKey() {
+    public static byte[] generateKey() {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance(ALG);
             keyGenerator.init(192);
@@ -111,7 +99,7 @@ public class CryptoUtil {
         return decryptByteBuf(data, key, spec);
     }
 
-    public static byte[] ivGenerator() {
+    public static byte[] generateIv() {
         SecureRandom random = new SecureRandom();
         return new IvParameterSpec(random.generateSeed(16)).getIV();
     }
@@ -139,5 +127,6 @@ public class CryptoUtil {
         return base64Encoder.encodeToString(bytes);
     }
 
-
+    public static void main(String[] args) throws Exception{
+    }
 }

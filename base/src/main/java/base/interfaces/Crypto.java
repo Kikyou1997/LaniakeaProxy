@@ -8,6 +8,10 @@ import io.netty.buffer.ByteBuf;
  */
 public interface Crypto extends Handler<ByteBuf> {
 
+    String AES = "AES";
+    String CFB_PADDING = "AES/CFB/PKCS5Padding";
+    String GCM_NOPADDING = "AES/GCM/NoPadding";
+
 
     ByteBuf encrypt(ByteBuf raw);
 

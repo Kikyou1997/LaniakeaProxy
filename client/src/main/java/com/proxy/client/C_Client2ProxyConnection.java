@@ -35,7 +35,6 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
     private SocketAddressEntry realTargetHost = null;
 
-
     private SocketAddressEntry proxyServerAddressEntry = new SocketAddressEntry(Config.config.getServerAddress(), (short) Config.config.getServerPort());
 
     public C_Client2ProxyConnection() {

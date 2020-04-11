@@ -35,7 +35,7 @@ public class ProxyServer extends AbstractProxy {
                 int num = Integer.parseInt(commandLine.getOptionValue(super.generateSecretKeyOption));
                 System.out.println("Generated following Secret keys:");
                 for (int i = 0; i < num; i++) {
-                    System.out.println(CryptoUtil.base64Encode(CryptoUtil.initKey()));
+                    System.out.println(CryptoUtil.base64Encode(CryptoUtil.generateKey()));
                 }
                 System.exit(0);
             }

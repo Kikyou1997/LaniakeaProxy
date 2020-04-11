@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientContext {
 
     public static int id = -1;
-    public static byte[] iv = CryptoUtil.ivGenerator();
+    public static byte[] iv = CryptoUtil.generateIv();
     public static Crypto crypto;
 
     public static void initContext(int id) {

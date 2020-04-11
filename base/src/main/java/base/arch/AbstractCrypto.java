@@ -9,7 +9,8 @@ import io.netty.buffer.ByteBuf;
  */
 public abstract class AbstractCrypto implements Crypto {
 
-
+    protected String ALG;
+    protected String CIPHER;
 
     public abstract ByteBuf encrypt(ByteBuf raw);
 
