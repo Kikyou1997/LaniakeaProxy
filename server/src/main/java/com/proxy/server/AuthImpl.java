@@ -3,6 +3,7 @@ package com.proxy.server;
 import base.arch.*;
 import base.constants.Packets;
 import base.constants.ResponseCode;
+import base.crypto.CryptoUtil;
 import base.interfaces.Auth;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

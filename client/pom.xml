@@ -11,8 +11,8 @@
 
     <dependencies>
         <dependency>
-            <artifactId>base</artifactId>
             <groupId>proxy</groupId>
+            <artifactId>base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

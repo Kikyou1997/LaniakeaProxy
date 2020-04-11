@@ -1,5 +1,6 @@
 
 import base.arch.HexDump;
+import base.crypto.GCMCrypto;
 import org.junit.After;
 import org.junit.Test;
 

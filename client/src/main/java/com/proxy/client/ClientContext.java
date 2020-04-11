@@ -1,6 +1,6 @@
 package com.proxy.client;
 
-import base.arch.CryptoUtil;
+import base.crypto.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.channel.ChannelFuture;
 import lombok.extern.slf4j.Slf4j;
