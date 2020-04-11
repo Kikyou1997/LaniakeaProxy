@@ -81,3 +81,5 @@ client sample:
 |时钟同步请求 |[1 byte code ]|
 | 时钟同步的响应 |[ 1 byte code ][ 8 bytes value of time]|
 | 隧道建立请求 |[ 1 byte req CONNECT code ][ 4 bytes id ][ 4 bytes content length ][ 若干字节的host ][ 2 bytes port ]|
+
+## 本代理并不安全

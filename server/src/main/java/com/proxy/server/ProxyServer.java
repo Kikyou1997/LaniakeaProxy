@@ -2,6 +2,7 @@ package com.proxy.server;
 
 import base.arch.*;
 import base.constants.Packets;
+import base.crypto.CryptoUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -35,7 +36,7 @@ public class ProxyServer extends AbstractProxy {
                 int num = Integer.parseInt(commandLine.getOptionValue(super.generateSecretKeyOption));
                 System.out.println("Generated following Secret keys:");
                 for (int i = 0; i < num; i++) {
-                    System.out.println(CryptoUtil.base64Encode(CryptoUtil.initKey()));
+                    System.out.println(CryptoUtil.base64Encode(CryptoUtil.generateKey()));
                 }
                 System.exit(0);
             }
@@ -50,7 +51,6 @@ public class ProxyServer extends AbstractProxy {
     @Override
     public void start() {
         Config.loadSettings(false);
-        Db.initDb();
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.coreNum), new NioEventLoopGroup(Platform.coreNum * 2));
         server.channel(NioServerSocketChannel.class);
@@ -68,9 +68,8 @@ public class ProxyServer extends AbstractProxy {
                         .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,
                                 Packets.FIELD_ID_LENGTH + Packets.FIELD_CODE_LENGTH, Packets.FIELD_LENGTH_LEN))
                         .addLast(new DataTransmissionPacketDecoder())
-                        .addLast(new StatisticHandler(channelTrafficStatistic.trafficCounter()))
                         .addLast(new DataTransmissionPacketEncoder())
-                        .addLast(new StatisticHandler(channelTrafficStatistic.trafficCounter()))
+                        //.addLast(new StatisticHandler(channelTrafficStatistic.trafficCounter()))
                         .addLast(new S_Client2ProxyConnection());
             }
         });

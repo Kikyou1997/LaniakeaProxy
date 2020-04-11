@@ -1,6 +1,6 @@
 package com.proxy.client;
 
-import base.arch.CryptoUtil;
+import base.crypto.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.channel.ChannelFuture;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ClientContext {
 
     public static int id = -1;
-    public static byte[] iv = CryptoUtil.ivGenerator();
+    public static byte[] iv = CryptoUtil.generateIv();
     public static Crypto crypto;
 
     public static void initContext(int id) {

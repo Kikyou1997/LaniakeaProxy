@@ -25,7 +25,6 @@ public class ServerContext {
         long lastActiveTime;
         String username;
         byte[] iv;
-        Crypto crypto;
     }
 
     public static Session getSession(int id) {

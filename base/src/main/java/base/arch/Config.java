@@ -1,5 +1,8 @@
 package base.arch;
 
+import base.crypto.CFBCrypto;
+import base.crypto.CryptoUtil;
+import base.interfaces.Crypto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -73,7 +76,11 @@ public class Config implements Serializable {
 
     public byte[] getSecretKeyBin() {
         if (this.secretKeyBin == null) {
-            this.secretKeyBin = CryptoUtil.base64Decode(this.secretKey);
+            if (this.secretKey != null){
+                this.secretKeyBin = CryptoUtil.base64Decode(this.secretKey);
+            } else {
+                return null;
+            }
         }
         return secretKeyBin;
     }
@@ -82,6 +89,12 @@ public class Config implements Serializable {
         if (!client) {
             config = IOUtil.getSettings(SERVER_CONFIG_FILE_PATH);
             config.initUserInfoMap();
+            String encMethod = config.getEncryptionMethod();
+            if (encMethod != null && !encMethod.equals(Crypto.GCM)) {
+                if (encMethod.equals(Crypto.CFB)) {
+                    CryptoUtil.setCrypto(new CFBCrypto(192, 16));
+                }
+            }
         } else {
             config = IOUtil.getSettings(CLIENT_CONFIG_FILE_PATH);
         }

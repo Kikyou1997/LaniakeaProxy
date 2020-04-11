@@ -29,6 +29,7 @@ public class IOUtil {
             log.error("Exception occurred when read configuration from config file from path: " + filePath, e);
         }
         log.warn("Read Settings Failed");
+        System.exit(-1);
         return null;
     }
 

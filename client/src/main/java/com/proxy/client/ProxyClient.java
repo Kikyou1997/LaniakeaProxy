@@ -4,6 +4,7 @@ import base.arch.*;
 import base.constants.Packets;
 import base.constants.RequestCode;
 import base.constants.ResponseCode;
+import base.crypto.CryptoUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -120,7 +121,6 @@ public class ProxyClient extends AbstractProxy {
             log.error("Build Connection failed");
         }
         log.info("Client Context initialized");
-
     }
 
     private ByteBuf generateClockRequest() {

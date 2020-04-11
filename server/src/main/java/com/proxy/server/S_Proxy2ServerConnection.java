@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
 
 
-    private final Crypto crypto = new ServerCryptoImpl(super.id);
+    private final Crypto crypto;
 
     public S_Proxy2ServerConnection(SocketAddressEntry socketAddress, AbstractConnection c2PConnection, int id) {
 
@@ -33,6 +33,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
             throw new Exceptions.ConnectionTimeoutException(socketAddress);
         }
         super.id = id;
+        crypto = new ServerCryptoImpl(super.id);
     }
 
     @Override
@@ -44,7 +45,9 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         log.debug("Host {} Size {} ", ProxyUtil.getLocalAddressAndPortFromChannel(channel), msg.readableBytes()
 
         );
+        log.debug("Bf Enc : " +  HexDump.dump(msg));
         ByteBuf encrypted = crypto.encrypt(msg);
+        log.debug("Af Enc : " +  HexDump.dump(encrypted));
         encrypted.readerIndex(0);
         LaniakeaPacket packet = new LaniakeaPacket(ResponseCode.DATA_TRANS_RESP, super.id, encrypted.readableBytes(), encrypted);
         c2PConnection.writeData(packet);

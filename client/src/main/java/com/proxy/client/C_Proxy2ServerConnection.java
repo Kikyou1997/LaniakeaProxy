@@ -15,11 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket> {
 
-    //private static int temp = 0;
-
-
-    public C_Proxy2ServerConnection() {
-    }
 
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
@@ -27,7 +22,9 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
+        log.debug("Bf Dec "+ HexDump.dump(msg.getContent()));
         ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
+        log.debug("Af Dec "+ HexDump.dump(decrypted));
         c2PConnection.writeData(decrypted);
     }
 
@@ -49,14 +46,11 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
                             .addLast(new DataTransmissionPacketDecoder())
                             .addLast(new DataTransmissionPacketEncoder())
                             .addLast(C_Proxy2ServerConnection.this);
-                    //log.info("Fuck {}", temp++)
-                    //ch.pipeline().addLast(this); 由于尚不知道的原因 导致initChannel反复执行
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
-        //bootstrap.option(ChannelOption.TCP_NODELAY, true);
         ChannelFuture future = bootstrap.connect(host, port).syncUninterruptibly();
         if (!future.isSuccess()) {
             this.channel.close();
