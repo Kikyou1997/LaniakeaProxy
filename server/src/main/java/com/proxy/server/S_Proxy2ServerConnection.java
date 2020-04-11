@@ -44,6 +44,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         log.debug("Host {} Size {} ", ProxyUtil.getLocalAddressAndPortFromChannel(channel), msg.readableBytes()
 
         );
+        log.debug("Bf Enc : " +  HexDump.dump(msg));
         ByteBuf encrypted = crypto.encrypt(msg);
         encrypted.readerIndex(0);
         LaniakeaPacket packet = new LaniakeaPacket(ResponseCode.DATA_TRANS_RESP, super.id, encrypted.readableBytes(), encrypted);

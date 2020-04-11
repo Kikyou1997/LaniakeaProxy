@@ -46,7 +46,7 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
-            return CryptoUtil.decrypt(cypherText, secretKey, iv);
+            return CryptoUtil.decrypt(cypherText, iv, secretKey);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

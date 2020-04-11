@@ -12,7 +12,6 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class ClientCryptoImpl implements Crypto {
 
-    private int id = ClientContext.id;
     private byte[] iv = ClientContext.iv;
     private byte[] sk = Config.config.getSecretKeyBin();
 
@@ -29,7 +28,7 @@ public class ClientCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
-            return CryptoUtil.decrypt(cypherText,  sk, iv);
+            return CryptoUtil.decrypt(cypherText, iv, sk);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
