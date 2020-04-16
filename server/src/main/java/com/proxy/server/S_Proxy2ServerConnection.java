@@ -77,5 +77,6 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
         channel.close();
     }
 
-
+    @Override
+    public void update() {}
 }

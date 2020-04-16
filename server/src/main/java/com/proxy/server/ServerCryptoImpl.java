@@ -22,8 +22,13 @@ public class ServerCryptoImpl implements Crypto {
 
     public ServerCryptoImpl(int id) {
         this.id = id;
-        secretKey = Config.getUserSecretKeyBin(ServerContext.getSession(id).getUsername());
-        iv = ServerContext.getSession(id).getIv();
+        ServerContext.Session session = ServerContext.getSession(id);
+        try {
+            secretKey = Config.getUserSecretKeyBin(session.getUsername());
+            iv = session.getIv();
+        } catch (NullPointerException e) {
+            throw new SessionExpiredException();
+        }
     }
 
     public ServerCryptoImpl() {

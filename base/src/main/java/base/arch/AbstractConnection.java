@@ -1,5 +1,6 @@
 package base.arch;
 
+import base.interfaces.Listener;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.ReferenceCountUtil;
@@ -10,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/1/29
  */
 @Slf4j
-public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter {
+public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter implements Listener {
 
     protected Channel channel;
     protected ChannelHandlerContext ctx;

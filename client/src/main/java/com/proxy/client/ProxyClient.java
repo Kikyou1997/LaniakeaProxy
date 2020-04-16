@@ -87,7 +87,7 @@ public class ProxyClient extends AbstractProxy {
                     case ResponseCode.AUTH_RESP:
                         int id = msg.readInt();
                         log.info(" Id received : {}", id);
-                        ClientContext.initContext(id);
+                        ClientContext.updateId(id);
                         ctx.close();
                         break;
                     case ResponseCode.AUTH_FAILED:
@@ -116,11 +116,12 @@ public class ProxyClient extends AbstractProxy {
             log.error("Build Connection failed");
             System.exit(-1);
         }
-        ChannelFuture future = channel.writeAndFlush(generateAuthRequest(serverClock)).syncUninterruptibly();
-        if (!future.isSuccess()) {
+        boolean r = sendAuthRequest(channel, serverClock);
+        if (!r) {
             log.error("Build Connection failed");
         }
         log.info("Client Context initialized");
+        channel.close();
     }
 
     private ByteBuf generateClockRequest() {
@@ -129,15 +130,21 @@ public class ProxyClient extends AbstractProxy {
         return buf;
     }
 
-    private ByteBuf generateAuthRequest(long clockTime) {
+    public static boolean sendAuthRequest(Channel channel, long clockTime) {
         ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
+        var iv = CryptoUtil.generateIv();
+        ClientContext.updateIv(iv);
         buf.
                 writeByte(RequestCode.AUTH_REQ).
                 writeBytes(
-                CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
-                writeBytes(ClientContext.iv).
+                        CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
+                writeBytes(iv).
                 writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
-        return buf;
+        boolean r = MessageUtil.sendMsg(channel, buf);
+        if (r) {
+            ClientContext.updateIv(iv);
+        }
+        return r;
     }
 
 }

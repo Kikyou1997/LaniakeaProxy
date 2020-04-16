@@ -2,7 +2,7 @@ package com.proxy.server;
 
 import static base.constants.RequestCode.*;
 
-import base.arch.MessageGenerator;
+import base.arch.MessageUtil;
 import base.constants.Packets;
 import base.interfaces.Handler;
 import io.netty.buffer.ByteBuf;
@@ -38,7 +38,7 @@ public class MessageProcessor extends ChannelInboundHandlerAdapter {
         Handler handler = null;
         switch (requestCode) {
             case GET_CLOCK_REQ:
-                ByteBuf buf = MessageGenerator.generateClockResponse();
+                ByteBuf buf = MessageUtil.generateClockResponse();
                 ctx.channel().writeAndFlush(buf);
                 return;
             case AUTH_REQ:

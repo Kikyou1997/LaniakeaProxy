@@ -1,14 +1,18 @@
 package com.proxy.server;
 
 import base.arch.AbstractConnection;
+import base.arch.Clock;
 import base.arch.LaniakeaPacket;
 import base.arch.SocketAddressEntry;
 import base.constants.Packets;
 import base.constants.RequestCode;
+import base.constants.ResponseCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledDirectByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,7 +28,6 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
     private int id;
 
     private Crypto crypto = null;
-
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) {
@@ -62,4 +65,24 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
         return new SocketAddressEntry(host, port);
     }
 
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        if (cause instanceof SessionExpiredException) {
+            ByteBuf buf = new LaniakeaPacket(ResponseCode.CONN_EXPIRED,
+                    id,
+                    8,
+                    ctx.alloc().buffer(8).writeBytes(Clock.getTimeInBytes()))
+                    .toByteBuf(ctx.alloc());
+            ChannelFuture future = ctx.writeAndFlush(buf).sync();
+            int count = 0;
+            while (!future.isSuccess() && count < 3) {
+                ctx.writeAndFlush(buf).sync();
+                count++;
+            }
+        }
+        super.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public void update() {}
 }

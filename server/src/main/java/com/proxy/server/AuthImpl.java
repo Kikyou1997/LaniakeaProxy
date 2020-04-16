@@ -52,10 +52,10 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
                 ((ByteBuf) msg).readBytes(iv);
                 session.setIv(iv);
                 session.setUsername(getUsername((ByteBuf) msg));
-                ByteBuf resp = createAuthResponse(id, ResponseCode.AUTH_RESP);
-                sendResponse(resp);
+                LaniakeaPacket resp = new LaniakeaPacket(ResponseCode.AUTH_RESP, id, 0, null);
+                sendResponse(resp.toByteBuf(ctx.alloc()));
             } else {
-                ctx.writeAndFlush(MessageGenerator.generateDirectBuf(ResponseCode.AUTH_FAILED));
+                ctx.writeAndFlush(MessageUtil.generateDirectBuf(ResponseCode.AUTH_FAILED));
                 context.channel().close();
             }
         }
@@ -67,10 +67,6 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
         byte[] usernameBytes = new byte[buf.readableBytes()];
         buf.readBytes(usernameBytes);
         return new String(usernameBytes, StandardCharsets.US_ASCII);
-    }
-
-    private ByteBuf createAuthResponse(int id, byte code) {
-        return MessageGenerator.generateDirectBuf(code, Converter.convertInteger2ByteBigEnding(id));
     }
 
 

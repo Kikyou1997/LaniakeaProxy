@@ -1,6 +1,7 @@
 package com.proxy.client;
 
 import base.arch.*;
+import base.constants.ResponseCode;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -18,16 +19,29 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
 
     public C_Proxy2ServerConnection(SocketAddressEntry entry, AbstractConnection c2PConnection) throws Exceptions.ConnectionTimeoutException {
         super.c2PConnection = c2PConnection;
+        ClientContext.registerListener(this);
     }
 
     @Override
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
-        log.debug("Bf Dec "+ HexDump.dump(msg.getContent()));
-        ByteBuf decrypted = ClientContext.crypto.decrypt(msg.getContent());
-        log.debug("Af Dec "+ HexDump.dump(decrypted));
-        c2PConnection.writeData(decrypted);
-    }
+        switch (msg.getCode()) {
+            case ResponseCode.CONN_EXPIRED:
+                boolean r = ProxyClient.sendAuthRequest(ctx.channel(), msg.getContent().readLong());
+                if (!r) {
+                    log.info("Send Re-Auth message failed");
+                }
+                break;
+            case ResponseCode.AUTH_RESP:
+                ClientContext.updateId(msg.getId());
+                break;
+            case ResponseCode.DATA_TRANS_RESP:
+                log.debug("Bf Dec " + HexDump.dump(msg.getContent()));
+                ByteBuf decrypted = ClientContext.getCrypto().decrypt(msg.getContent());
+                log.debug("Af Dec " + HexDump.dump(decrypted));
+                c2PConnection.writeData(decrypted);
 
+        }
+    }
 
     @Override
     public ChannelFuture buildConnection2Remote(SocketAddressEntry socketAddress) {
@@ -58,6 +72,8 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
         return future;
     }
 
-
-
+    @Override
+    public void update() {
+        this.id = ClientContext.getId();
+    }
 }

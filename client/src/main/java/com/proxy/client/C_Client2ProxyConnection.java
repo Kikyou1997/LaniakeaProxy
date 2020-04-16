@@ -6,17 +6,14 @@ import base.constants.RequestCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpConstants;
-import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.Ref;
 
 /**
  * @author kikyou
@@ -25,7 +22,7 @@ import java.sql.Ref;
 @Slf4j
 public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
-    private Crypto crypto = ClientContext.crypto;
+    private Crypto crypto = ClientContext.getCrypto();
 
     private boolean tunnelBuilt;
 
@@ -39,7 +36,8 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
 
     public C_Client2ProxyConnection() {
         super.c2PConnection = this;
-        super.id = ClientContext.id;
+        ClientContext.registerListener(this);
+        super.id = ClientContext.getId();
     }
 
 
@@ -72,7 +70,7 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
             buf.writeShort(socketAddress.getPort());
             buf = crypto.encrypt(buf);
             byte[] encrypted = ProxyUtil.getBytesFromByteBuf(buf);
-            ByteBuf buildConnectionRequest = MessageGenerator.generateDirectBuf(RequestCode.CONNECT,
+            ByteBuf buildConnectionRequest = MessageUtil.generateDirectBuf(RequestCode.CONNECT,
                     Converter.convertInteger2ByteBigEnding(id), Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
                     encrypted);
             connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
@@ -138,4 +136,8 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
         return byteBuf;
     }
 
+    @Override
+    public void update() {
+        this.id = ClientContext.getId();
+    }
 }

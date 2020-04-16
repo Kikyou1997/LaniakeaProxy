@@ -15,11 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientCryptoImpl implements Crypto {
 
-    private byte[] iv = ClientContext.iv;
-    private byte[] sk = Config.config.getSecretKeyBin();
+    private final byte[] sk = Config.config.getSecretKeyBin();
 
     @Override
     public ByteBuf encrypt(ByteBuf raw) {
+        byte[] iv = ClientContext.getIv();
         try {
             return CryptoUtil.encrypt(raw, iv, sk);
         } catch (Exception e) {
@@ -30,6 +30,7 @@ public class ClientCryptoImpl implements Crypto {
 
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
+        byte[] iv = ClientContext.getIv();
         try {
             log.debug("iv " + HexDump.dump(null, iv));
             log.debug("sk " + HexDump.dump(null, sk));

@@ -1,6 +1,10 @@
 package base.arch;
 
+import base.constants.RequestCode;
+import base.constants.ResponseCode;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.EmptyByteBuf;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -16,4 +20,13 @@ public class LaniakeaPacket {
     private int length;
     private ByteBuf content;
 
+    public LaniakeaPacket() {
+    }
+
+    public ByteBuf toByteBuf(ByteBufAllocator alloc) {
+        return alloc.buffer().writeByte(code)
+                .writeInt(id)
+                .writeInt(length)
+                .writeBytes(content == null ? new EmptyByteBuf(alloc) : content);
+    }
 }

@@ -3,15 +3,19 @@ package base.arch;
 import base.constants.ResponseCode;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
  * @author kikyou
  * Created at 2020/2/1
  */
-public class MessageGenerator {
+public class MessageUtil {
 
     private static final PooledByteBufAllocator allocator = PooledByteBufAllocator.DEFAULT;
     private static final int CLOCK_RESP_SIZE = 9;
+    private static final int RETRY_TIMES = 3;
 
 
     public static ByteBuf generateDirectBuf(byte code, byte[]... content) {
@@ -37,6 +41,23 @@ public class MessageGenerator {
         return null;
     }
 
+    public static boolean sendMsg(ChannelHandlerContext ctx, ByteBuf buf){
+        return sendMsg(ctx.channel(), buf);
+    }
+
+    public static boolean sendMsg(Channel ctx, ByteBuf buf){
+        ChannelFuture future = null;
+        int count = 0;
+        do {
+            count++;
+            try {
+                future = ctx.writeAndFlush(buf).sync();
+            } catch (InterruptedException e) {
+                return false;
+            }
+        } while (!future.isSuccess() && count < RETRY_TIMES);
+        return future.isSuccess();
+    }
 
 
 }
