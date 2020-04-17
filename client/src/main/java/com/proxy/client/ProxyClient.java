@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.function.Predicate;
 
 /**
  * @author kikyou
@@ -120,6 +121,12 @@ public class ProxyClient extends AbstractProxy {
         if (!r) {
             log.error("Build Connection failed");
         }
+        LockUtil.waitUntilTrue(new Predicate<Integer>() {
+            @Override
+            public boolean test(Integer o) {
+                return ClientContext.getId() != o.intValue();
+            }
+        }, -1, 10, 50);
         log.info("Client Context initialized");
         channel.close();
     }
@@ -140,7 +147,7 @@ public class ProxyClient extends AbstractProxy {
                         CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
                 writeBytes(iv).
                 writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
-        boolean r = MessageUtil.sendMsg(channel, buf);
+        boolean r = MessageUtil.sendSyncMsg(channel, buf);
         if (r) {
             ClientContext.updateIv(iv);
         }

@@ -1,6 +1,7 @@
 package com.proxy.server;
 
 import base.interfaces.Crypto;
+import base.interfaces.Listener;
 import lombok.Data;
 
 import java.util.Map;
@@ -13,12 +14,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ServerContext {
 
-    //缓存已用流量
-    public static Map<String/*用户名*/, AtomicLong> userTrafficMap = new ConcurrentHashMap<>();
 
     private static Map<Integer/*id*/, Session> sessionMap = new ConcurrentHashMap<>();
 
     private static final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
+
+    static {
+        scheduled.scheduleAtFixedRate(new DeleteExpiredSessionService(), 5, 10, TimeUnit.MINUTES);
+    }
 
     @Data
     public static class Session {
@@ -50,10 +53,6 @@ public class ServerContext {
                 }
             }
         }
-    }
-
-    static {
-        scheduled.scheduleAtFixedRate(new DeleteExpiredSessionService(), 5, 10, TimeUnit.MINUTES);
     }
 
 }

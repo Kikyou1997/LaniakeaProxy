@@ -1,9 +1,9 @@
 package com.proxy.server;
 
 import base.arch.*;
-import base.constants.RequestCode;
 import base.constants.ResponseCode;
 import base.interfaces.Crypto;
+import base.protocol.LaniakeaPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;

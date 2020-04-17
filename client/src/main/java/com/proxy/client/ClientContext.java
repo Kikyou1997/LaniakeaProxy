@@ -52,7 +52,6 @@ public class ClientContext {
                 listenerRef.clear();
             }
         }
-
         Reference toBeRemoved = null;
         do {
             toBeRemoved = referenceQueue.poll();

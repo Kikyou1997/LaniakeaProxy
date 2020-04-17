@@ -71,4 +71,11 @@ public abstract class AbstractConnection<V> extends ChannelInboundHandlerAdapter
         return null;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }

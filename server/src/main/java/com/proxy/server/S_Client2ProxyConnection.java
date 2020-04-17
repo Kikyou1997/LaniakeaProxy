@@ -2,16 +2,12 @@ package com.proxy.server;
 
 import base.arch.AbstractConnection;
 import base.arch.Clock;
-import base.arch.LaniakeaPacket;
+import base.protocol.LaniakeaPacket;
 import base.arch.SocketAddressEntry;
-import base.constants.Packets;
 import base.constants.RequestCode;
 import base.constants.ResponseCode;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledDirectByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +30,11 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
         if (p2SConnection == null) {
             buildConnection2RealServer(msg);
             return;
+        } else if (msg.getId() != -1){
+            if (this.id != msg.getId()) {
+                this.id = msg.getId();
+                p2SConnection.setId(this.id);
+            }
         }
         if (msg.getCode() == RequestCode.DATA_TRANS_REQ) {
             decryptDataAndSend(msg.getContent());
@@ -44,10 +45,10 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
         byte code = msg.getCode();
         this.id = msg.getId();
         int length = msg.getLength();
-        crypto = new ServerCryptoImpl(id);
+        this.crypto = new ServerCryptoImpl(id);
         if (code == RequestCode.CONNECT) {
-            var buf = crypto.decrypt(msg.getContent());
-            SocketAddressEntry socketAddress = getHostFromBuf(buf);
+            ByteBuf content = msg.getContent();
+            SocketAddressEntry socketAddress = SocketAddressEntry.getFromEncryptedBuf(content, crypto);
             super.p2SConnection = new S_Proxy2ServerConnection(socketAddress, this, id);
         }
     }
@@ -59,11 +60,6 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
         super.p2SConnection.writeData(buf);
     }
 
-    private SocketAddressEntry getHostFromBuf(ByteBuf buf) {
-        String host = buf.readCharSequence(buf.readableBytes() - Packets.FILED_PORT_LENGTH, StandardCharsets.US_ASCII).toString();
-        short port = buf.readShort();
-        return new SocketAddressEntry(host, port);
-    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
@@ -84,5 +80,7 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
     }
 
     @Override
-    public void update() {}
+    public void update() {
+
+    }
 }

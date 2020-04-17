@@ -57,7 +57,7 @@ public class Db {
             connection.createStatement().execute(createConcreteUserTable);
             for (Config.User u : Config.config.getUsers()) {
                 long used = getUserUsedTrafficFromDb(u.getUsername());
-                ServerContext.userTrafficMap.put(u.getUsername(), new AtomicLong(used));
+                //ServerContext.userTrafficMap.put(u.getUsername(), new AtomicLong(used));
             }
         } catch (SQLException e) {
             log.error("Sql error", e);

@@ -1,6 +1,7 @@
 package base.arch;
 
 import base.constants.RequestCode;
+import base.protocol.LaniakeaPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import org.junit.Test;

@@ -2,6 +2,7 @@ package com.proxy.client;
 
 import base.arch.*;
 import base.constants.ResponseCode;
+import base.protocol.LaniakeaPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;

@@ -4,6 +4,7 @@ import base.arch.*;
 import base.constants.Packets;
 import base.constants.RequestCode;
 import base.interfaces.Crypto;
+import base.protocol.LaniakeaPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
@@ -64,17 +65,10 @@ public class C_Client2ProxyConnection extends AbstractConnection<ByteBuf> {
         try {
             p2SConnection = new C_Proxy2ServerConnection(proxyServerAddressEntry, this);
             p2SConnection.buildConnection2Remote(proxyServerAddressEntry);
-            byte[] hostBytes = socketAddress.getHost().getBytes(StandardCharsets.US_ASCII);
-            ByteBuf buf = ctx.alloc().buffer(hostBytes.length + Packets.FILED_PORT_LENGTH + Packets.FILED_HOST_LENGTH);
-            buf.writeBytes(hostBytes);
-            buf.writeShort(socketAddress.getPort());
-            buf = crypto.encrypt(buf);
-            byte[] encrypted = ProxyUtil.getBytesFromByteBuf(buf);
-            ByteBuf buildConnectionRequest = MessageUtil.generateDirectBuf(RequestCode.CONNECT,
-                    Converter.convertInteger2ByteBigEnding(id), Converter.convertInteger2ByteBigEnding(buf.readableBytes()),
-                    encrypted);
-            connectRequestSent = p2SConnection.writeData(buildConnectionRequest).syncUninterruptibly().isSuccess();
-            ReferenceCountUtil.safeRelease(buf);
+            ByteBuf encryptedSocketEntry = socketAddress.encryptEntry(crypto, ctx.alloc());
+            LaniakeaPacket packet = new LaniakeaPacket(RequestCode.CONNECT, this.id, encryptedSocketEntry.readableBytes(), encryptedSocketEntry);
+            connectRequestSent = p2SConnection.writeData(packet).syncUninterruptibly().isSuccess();
+            ReferenceCountUtil.safeRelease(encryptedSocketEntry);
         } catch (Exceptions.ConnectionTimeoutException e) {
             log.error("Connect to remote proxy server timeout", e);
         }

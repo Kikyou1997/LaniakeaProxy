@@ -41,11 +41,11 @@ public class MessageUtil {
         return null;
     }
 
-    public static boolean sendMsg(ChannelHandlerContext ctx, ByteBuf buf){
-        return sendMsg(ctx.channel(), buf);
+    public static boolean sendSyncMsg(ChannelHandlerContext ctx, ByteBuf buf){
+        return sendSyncMsg(ctx.channel(), buf);
     }
 
-    public static boolean sendMsg(Channel ctx, ByteBuf buf){
+    public static boolean sendSyncMsg(Channel ctx, ByteBuf buf){
         ChannelFuture future = null;
         int count = 0;
         do {
