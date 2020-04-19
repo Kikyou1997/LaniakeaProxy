@@ -5,6 +5,7 @@ import base.constants.Packets;
 import base.constants.ResponseCode;
 import base.crypto.CryptoUtil;
 import base.interfaces.Auth;
+import base.interfaces.Handler;
 import base.protocol.LaniakeaPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created at 2020/1/31
  */
 @Slf4j
-public class AuthImpl extends AbstractHandler<Void> implements Auth {
+public class AuthImpl implements Auth, Handler<Void> {
 
     private static AtomicInteger idAllocator = new AtomicInteger(0);
     private static final int HASH_POS = Packets.FIELD_CODE_LENGTH;
@@ -42,22 +43,21 @@ public class AuthImpl extends AbstractHandler<Void> implements Auth {
 
     @Override
     public Void handle(Object msg, ChannelHandlerContext ctx) throws RuntimeException {
-        super.context = ctx;
         if (msg instanceof ByteBuf) {
             if (isValid(msg)) {
                 int id = idAllocator.incrementAndGet();
-                ServerContext.Session session = ServerContext.getSession(id);
-                session.setLastActiveTime(System.currentTimeMillis());
-                ((ByteBuf) msg).readerIndex(USERNAME_POS - Packets.FIELD_IV_LENGTH);
                 byte[] iv = new byte[Packets.FIELD_IV_LENGTH];
+                String username = null;
+
+                ((ByteBuf) msg).readerIndex(USERNAME_POS - Packets.FIELD_IV_LENGTH);
                 ((ByteBuf) msg).readBytes(iv);
-                session.setIv(iv);
-                session.setUsername(getUsername((ByteBuf) msg));
+                username = getUsername((ByteBuf) msg);
+                ServerContext.createSession(id, username, iv);
                 LaniakeaPacket resp = new LaniakeaPacket(ResponseCode.AUTH_RESP, id, 0, null);
-                sendResponse(resp.toByteBuf(ctx.alloc()));
+                MessageUtil.sendSyncMsg(ctx, resp.toByteBuf(ctx.alloc()));
             } else {
                 ctx.writeAndFlush(MessageUtil.generateDirectBuf(ResponseCode.AUTH_FAILED));
-                context.channel().close();
+                ctx.close();
             }
         }
         return null;

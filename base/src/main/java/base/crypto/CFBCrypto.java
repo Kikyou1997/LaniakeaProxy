@@ -16,11 +16,6 @@ public class CFBCrypto extends AbstractCrypto {
     }
 
     @Override
-    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) {
-        return super.handle(msg, ctx);
-    }
-
-    @Override
     public byte[] encrypt(byte[] raw, byte[] iv, byte[] key) {
         Cipher cipher = null;
         try {

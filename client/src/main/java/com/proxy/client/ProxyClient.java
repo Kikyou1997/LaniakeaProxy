@@ -32,7 +32,7 @@ public class ProxyClient extends AbstractProxy {
     }
 
     private static final String LOCALHOST = "127.0.0.1";
-    private long serverClock = -1;
+    private static long serverClock = -1;
 
     @Override
     protected AbstractProxy prepare(String[] args) {
@@ -54,7 +54,7 @@ public class ProxyClient extends AbstractProxy {
     @Override
     public void start() {
         Config.loadSettings(true);
-        getIdFromRemoteServer(Config.config.getServerAddress(), Config.config.getServerPort());
+        auth();
         ServerBootstrap server = new ServerBootstrap();
         server.group(new NioEventLoopGroup(Platform.coreNum), new NioEventLoopGroup(Platform.coreNum * 2));
         server.channel(NioServerSocketChannel.class);
@@ -72,7 +72,34 @@ public class ProxyClient extends AbstractProxy {
                 Config.config.getLocalPort());
     }
 
-    private void getIdFromRemoteServer(String ip, int port) {
+
+    private static ByteBuf generateClockRequest() {
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH);
+        buf.writeByte(RequestCode.GET_CLOCK_REQ);
+        return buf;
+    }
+
+    private static boolean sendAuthRequest(Channel channel, long clockTime) {
+        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
+        var iv = CryptoUtil.generateIv();
+        ClientContext.updateIv(iv);
+        buf.
+                writeByte(RequestCode.AUTH_REQ).
+                writeBytes(
+                        CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
+                writeBytes(iv).
+                writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
+        boolean r = MessageUtil.sendSyncMsg(channel, buf);
+        if (r) {
+            ClientContext.updateIv(iv);
+        }
+        return r;
+    }
+
+    public static boolean auth() {
+        SocketAddressEntry server = ClientContext.getServerSocketAddressEntry();
+        String ip = server.getHost();
+        short port = server.getPort();
         Bootstrap b = new Bootstrap();
         b.channel(NioSocketChannel.class);
         b.group(new NioEventLoopGroup(1));
@@ -95,7 +122,7 @@ public class ProxyClient extends AbstractProxy {
                         log.error("username or secret key incorrect");
                         System.exit(-1);
                     default:
-                        //do nothing
+                        log.warn("Unrecognized message received during handshaking");
                         break;
                 }
             }
@@ -121,36 +148,18 @@ public class ProxyClient extends AbstractProxy {
         if (!r) {
             log.error("Build Connection failed");
         }
-        LockUtil.waitUntilTrue(new Predicate<Integer>() {
+        if (LockUtil.waitUntilTrue(new Predicate<Integer>() {
             @Override
             public boolean test(Integer o) {
                 return ClientContext.getId() != o.intValue();
             }
-        }, -1, 10, 50);
-        log.info("Client Context initialized");
-        channel.close();
-    }
+        }, -1, 10, 50)){
+            log.info("Client Context initialized");
 
-    private ByteBuf generateClockRequest() {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH);
-        buf.writeByte(RequestCode.GET_CLOCK_REQ);
-        return buf;
-    }
-
-    public static boolean sendAuthRequest(Channel channel, long clockTime) {
-        ByteBuf buf = ByteBufAllocator.DEFAULT.buffer(Packets.FIELD_CODE_LENGTH + Packets.FIELD_HASH_LENGTH);
-        var iv = CryptoUtil.generateIv();
-        ClientContext.updateIv(iv);
-        buf.
-                writeByte(RequestCode.AUTH_REQ).
-                writeBytes(
-                        CryptoUtil.getSHA256Hash(Config.config.getSecretKey(), Converter.convertLong2ByteBigEnding(clockTime))).
-                writeBytes(iv).
-                writeBytes(Config.config.getUsername().getBytes(StandardCharsets.US_ASCII));
-        boolean r = MessageUtil.sendSyncMsg(channel, buf);
-        if (r) {
-            ClientContext.updateIv(iv);
+        } else {
+            log.warn("Build Connection to Proxy Server failed");
         }
+        channel.close();
         return r;
     }
 

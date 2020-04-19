@@ -20,6 +20,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
 
 
     private final Crypto crypto;
+    private final Session session;
 
     public S_Proxy2ServerConnection(SocketAddressEntry socketAddress, AbstractConnection c2PConnection, int id) {
 
@@ -32,8 +33,8 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
             log.debug("Build connection to {} failed ", socketAddress.toString());
             throw new Exceptions.ConnectionTimeoutException(socketAddress);
         }
-        super.id = id;
-        crypto = new ServerCryptoImpl(super.id);
+        session = ServerContext.getSession(id);
+        crypto = new ServerCryptoImpl(session);
     }
 
     @Override
@@ -42,6 +43,7 @@ public class S_Proxy2ServerConnection extends AbstractConnection<ByteBuf> {
     }
 
     private void sendData2Client(ByteBuf msg) {
+        session.setLastActiveTime(System.currentTimeMillis());
         log.debug("Host {} Size {} ", ProxyUtil.getLocalAddressAndPortFromChannel(channel), msg.readableBytes()
 
         );

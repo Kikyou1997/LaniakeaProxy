@@ -32,10 +32,6 @@ public abstract class AbstractCrypto implements Crypto {
         return null;
     }
 
-    @Override
-    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) {
-        return null;
-    }
 
     public abstract byte[] encrypt(byte[] raw, byte[] iv, byte[] key);
 

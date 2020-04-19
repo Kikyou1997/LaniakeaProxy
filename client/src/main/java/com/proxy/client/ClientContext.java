@@ -1,5 +1,7 @@
 package com.proxy.client;
 
+import base.arch.Config;
+import base.arch.SocketAddressEntry;
 import base.crypto.CryptoUtil;
 import base.interfaces.Context;
 import base.interfaces.Crypto;
@@ -23,6 +25,7 @@ public class ClientContext {
 
     public int id = -1;
     public byte[] iv = CryptoUtil.generateIv();
+    public SocketAddressEntry server;
     public Crypto crypto = new ClientCryptoImpl();
     private static ClientContext context = new ClientContext();
     private List<WeakReference<Listener>> listenersList = new LinkedList<>();
@@ -37,6 +40,13 @@ public class ClientContext {
         context.id = id;
         context.notifyListeners();
     }
+
+
+   static {
+       String address = Config.config.getServerAddress();
+       int port = Config.config.getServerPort();
+       context.server = new SocketAddressEntry(address, (short)port);
+   }
 
     public static void registerListener(Listener listener) {
         WeakReference<Listener> weakReference = new WeakReference<>(listener);
@@ -69,5 +79,9 @@ public class ClientContext {
 
     public static Crypto getCrypto() {
         return context.crypto;
+    }
+
+    public static SocketAddressEntry getServerSocketAddressEntry() {
+        return context.server;
     }
 }

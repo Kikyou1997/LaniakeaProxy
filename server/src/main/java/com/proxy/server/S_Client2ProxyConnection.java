@@ -2,6 +2,7 @@ package com.proxy.server;
 
 import base.arch.AbstractConnection;
 import base.arch.Clock;
+import base.arch.Session;
 import base.protocol.LaniakeaPacket;
 import base.arch.SocketAddressEntry;
 import base.constants.RequestCode;
@@ -12,8 +13,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * @author kikyou
  * Created at 2020/1/29
@@ -21,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 @Slf4j
 public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket> {
 
-    private int id;
 
     private Crypto crypto = null;
 
@@ -36,6 +34,7 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
                 p2SConnection.setId(this.id);
             }
         }
+        ServerContext.updateSessionLastActiveTime(this.id);
         if (msg.getCode() == RequestCode.DATA_TRANS_REQ) {
             decryptDataAndSend(msg.getContent());
         }
@@ -44,8 +43,7 @@ public class S_Client2ProxyConnection extends AbstractConnection<LaniakeaPacket>
     private void buildConnection2RealServer(LaniakeaPacket msg) {
         byte code = msg.getCode();
         this.id = msg.getId();
-        int length = msg.getLength();
-        this.crypto = new ServerCryptoImpl(id);
+        this.crypto = new ServerCryptoImpl(ServerContext.getSession(this.id));
         if (code == RequestCode.CONNECT) {
             ByteBuf content = msg.getContent();
             SocketAddressEntry socketAddress = SocketAddressEntry.getFromEncryptedBuf(content, crypto);

@@ -27,7 +27,7 @@ public class C_Proxy2ServerConnection extends AbstractConnection<LaniakeaPacket>
     protected void doRead(ChannelHandlerContext ctx, LaniakeaPacket msg) throws Exception {
         switch (msg.getCode()) {
             case ResponseCode.CONN_EXPIRED:
-                boolean r = ProxyClient.sendAuthRequest(ctx.channel(), msg.getContent().readLong());
+                boolean r = ProxyClient.auth();
                 if (!r) {
                     log.info("Send Re-Auth message failed");
                 }

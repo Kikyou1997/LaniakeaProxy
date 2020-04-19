@@ -1,13 +1,13 @@
 package com.proxy.server;
 
 import base.arch.Config;
-import base.arch.HexDump;
-import base.crypto.CryptoException;
+import base.arch.Session;
 import base.crypto.CryptoUtil;
 import base.interfaces.Crypto;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Objects;
 
 /**
  * @author kikyou
@@ -16,32 +16,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ServerCryptoImpl implements Crypto {
 
-    private int id;
     private byte[] secretKey = null;
-    private byte[] iv = null;
+    private Session session = null;
 
-    public ServerCryptoImpl(int id) {
-        this.id = id;
-        ServerContext.Session session = ServerContext.getSession(id);
+    public ServerCryptoImpl(Session session) {
+        Objects.requireNonNull(session);
+        this.session = session;
         try {
             secretKey = Config.getUserSecretKeyBin(session.getUsername());
-            iv = session.getIv();
         } catch (NullPointerException e) {
             throw new SessionExpiredException();
         }
-    }
-
-    public ServerCryptoImpl() {
     }
 
     @Override
     public ByteBuf encrypt(ByteBuf raw) {
         raw.readerIndex(0);
         try {
+            var iv = session.getIv();
             return CryptoUtil.encrypt(raw, iv, secretKey);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw new SessionExpiredException();
         }
     }
 
@@ -51,16 +47,13 @@ public class ServerCryptoImpl implements Crypto {
     @Override
     public ByteBuf decrypt(ByteBuf cypherText) {
         try {
+            var iv = session.getIv();
             return CryptoUtil.decrypt(cypherText, iv, secretKey);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw new SessionExpiredException();
         }
     }
 
-    @Override
-    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) {
-        return null;
-    }
 
 }

@@ -6,7 +6,7 @@ import io.netty.buffer.ByteBuf;
  * @author kikyou
  * @date 2020/1/29
  */
-public interface Crypto extends Handler<ByteBuf> {
+public interface Crypto {
 
     String AES = "AES";
     String CFB_PADDING = "AES/CFB/PKCS5Padding";

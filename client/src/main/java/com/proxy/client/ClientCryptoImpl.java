@@ -41,8 +41,4 @@ public class ClientCryptoImpl implements Crypto {
         }
     }
 
-    @Override
-    public ByteBuf handle(Object msg, ChannelHandlerContext ctx) {
-        return null;
-    }
 }
